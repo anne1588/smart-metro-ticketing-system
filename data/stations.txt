@@ -1,0 +1,5 @@
+# Format: stationId|name|location
+ST01|KL Sentral|Kuala Lumpur
+ST02|Masjid Jamek|Kuala Lumpur
+ST03|Pasar Seni|Kuala Lumpur
+ST04|Bukit Bintang|Kuala Lumpur

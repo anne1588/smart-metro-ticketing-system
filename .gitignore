@@ -1,29 +1,26 @@
-# Eclipse
-.classpath
-.project
-.settings/
+# Compiled Java
+*.class
 bin/
-.metadata/
+target/
+build/
 
-# IDE
+# IDE - VS Code (这个不要提交，每个人配置不同)
+.vscode/
+*.code-workspace
+
+# IDE - IntelliJ
 .idea/
 *.iml
-*.swp
-*.swo
+*.ipr
+*.iws
 
-# OS
+# OS garbage
 .DS_Store
 Thumbs.db
 
-# Build
-*.class
-*.jar
-*.war
-*.ear
+# Logs
 *.log
 
-# Project specific
-data/temp/
-*.backup
-.gradle/
-build/
+# ---------- 核心改动在这里 ----------
+# 我不忽略根目录下的 .txt 数据文件（我要提交给导师）
+!*.txt

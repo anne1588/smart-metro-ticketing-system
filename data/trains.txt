@@ -1,0 +1,3 @@
+# Format: trainId|name|capacity
+TR01|Kelana Jaya Line|300
+TR02|Ampang Line|250
