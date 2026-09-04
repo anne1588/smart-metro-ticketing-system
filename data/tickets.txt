@@ -1,7 +1,7 @@
 # Format: ticketId|passengerEmail|sourceId|destId|type|status|fare
 TK001|alice@email.com|ST01|ST02|SINGLE|USED|2.75
 TK002|alice@email.com|ST02|ST04|DAILY|ACTIVE|3.80
-TK003|bob@email.com|ST01|ST03|MONTHLY|ACTIVE|72.00
+TK003|bob@email.com|ST01|ST03|MONTHLY|CANCELLED|72.00
 TK004|bob@email.com|ST01|ST02|SINGLE|CANCELLED|2.75
 TK005|n@|ST01|ST02|SINGLE|USED|2.75
 TK006|n@|ST02|ST04|DAILY|USED|3.80

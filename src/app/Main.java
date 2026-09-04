@@ -108,7 +108,7 @@ public class Main {
     }
 
     // ------------------------------------------------------------------
-    // Initialisation
+    // Initialization
     // ------------------------------------------------------------------
 
     /**
@@ -329,10 +329,11 @@ public class Main {
             System.out.println("\n------------ Passenger Menu ------------");
             System.out.println("1. View Profile");
             System.out.println("2. Top Up Balance");
-            System.out.println("3. Buy Ticket");
-            System.out.println("4. Cancel Ticket");
-            System.out.println("5. View My Tickets");
-            System.out.println("6. Logout");
+            System.out.println("3. View Routes");
+            System.out.println("4. Buy Ticket");
+            System.out.println("5. Cancel Ticket");
+            System.out.println("6. View My Tickets");
+            System.out.println("7. Logout");
             System.out.print("Choose an option: ");
 
             switch (readInt()) {
@@ -343,16 +344,19 @@ public class Main {
                     topUpBalance(passenger);
                     break;
                 case 3:
+                	routeService.viewAllRoutes();
+                	break;
+                case 4:
                     buyTicketFlow(passenger);
                     break;
-                case 4:
+                case 5:
                     cancelTicketFlow(passenger);
                     break;
-                case 5:
+                case 6:
                     ticketService.displayTickets(
                             ticketService.getTicketsForPassenger(passenger), "MY TICKETS");
                     break;
-                case 6:
+                case 7:
                     System.out.println("\n[Info] Logged out. See you soon!");
                     inMenu = false;
                     break;
@@ -501,20 +505,24 @@ public class Main {
         System.out.println("  1. SINGLE   (base fare = distance x RM 0.50)");
         System.out.println("  2. DAILY    (base fare x 2)");
         System.out.println("  3. MONTHLY  (base fare x 20)");
-        System.out.print("Enter 1 - 3 (or 0 to abort): ");
-        switch (readInt()) {
-            case 1:
-                return TicketType.SINGLE;
-            case 2:
-                return TicketType.DAILY;
-            case 3:
-                return TicketType.MONTHLY;
-            case 0:
-                return null;
-            default:
-                System.out.println("[Error] Invalid choice. Aborting purchase.");
-                return null;
+        while(true) {
+        	System.out.print("Enter 1 - 3 (or 0 to abort): ");
+            switch (readInt()) {
+                case 1:
+                    return TicketType.SINGLE;
+                case 2:
+                    return TicketType.DAILY;
+                case 3:
+                    return TicketType.MONTHLY;
+                case 0:
+                	System.out.println("Aborted from buying ticket.");
+                    return null;
+                default:
+                    System.out.println("[Error] Invalid choice. Try again.");
+                    //return null;
+            }
         }
+        
     }
 
     /**
@@ -584,9 +592,11 @@ public class Main {
                     + " cancelled. RM " + String.format("%.2f", cancelled.getFare())
                     + " refunded to your balance. New balance: RM "
                     + String.format("%.2f", passenger.getBalance()));
+            FILE_MANAGER.saveTickets(TICKETS);
         } catch (TicketNotFoundException e) {
             System.out.println("[Error] " + e.getMessage());
         }
+        catch(FileProcessingException e) {}
     }
 
     // ------------------------------------------------------------------
