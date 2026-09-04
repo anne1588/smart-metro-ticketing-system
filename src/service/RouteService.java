@@ -33,8 +33,10 @@ public class RouteService {
      * @param distance    the distance in kilometres
      * @return true if created successfully, false if the ID already exists
      */
-    public boolean createRoute(String routeId, Station source, Station destination, double distance) {
-        for (Route route : routes) {
+    public boolean createRoute(int size, Station source, Station destination, double distance) {
+    	
+    	String routeId = generateNextRouteId(size);
+    	for (Route route : routes) {
             if (route.getRouteId().equalsIgnoreCase(routeId.trim())) {
                 return false;
             }
@@ -44,6 +46,11 @@ public class RouteService {
         }
         routes.add(new Route(routeId.trim(), source, destination, distance));
         return true;
+    }
+    
+    public String generateNextRouteId(int size) {
+    	int nextNumber = size + 1;
+    	return String.format("R%02d", nextNumber);
     }
 
     /**

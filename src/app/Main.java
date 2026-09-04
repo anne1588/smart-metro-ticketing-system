@@ -449,8 +449,12 @@ public class Main {
         Ticket ticket = ticketService.buyTicket(passenger, route, type);
 
         if (processPaymentForTicket(passenger, ticket)) {
-            System.out.println("\n[Success] Ticket booked and paid successfully!");
-            System.out.println("  " + ticket);
+        	try {
+        		FILE_MANAGER.saveTickets(TICKETS);
+        		System.out.println("\n[Success] Ticket booked and paid successfully!");
+                System.out.println("  " + ticket);
+        	}catch(FileProcessingException e) {}
+            
         } else {
             // Payment failed: remove the ticket so nothing is kept unpaid.
             TICKETS.remove(ticket);
@@ -610,9 +614,7 @@ public class Main {
 
             switch (readInt()) {
                 case 1:
-                    try {
-                    	addStationFlow();
-                    } catch(FileProcessingException e){}
+                    addStationFlow();
                     break;
                 case 2:
                     stationService.viewAllStations();
@@ -621,16 +623,13 @@ public class Main {
                     searchStationFlow();
                     break;
                 case 4:
-                	try {
-                		addTrainFlow();
-                	} catch(FileProcessingException e) {}
-                    
+                	addTrainFlow();
                     break;
                 case 5:
                     trainService.viewAllTrains();
                     break;
                 case 6:
-                    createRouteFlow();
+                	createRouteFlow();  
                     break;
                 case 7:
                     routeService.viewAllRoutes();
@@ -654,19 +653,17 @@ public class Main {
     /**
      * Add-station flow for the admin.
      */
-    private static void addStationFlow() throws FileProcessingException{
-
-    	List<Station> stations = FILE_MANAGER.loadStations();
-    	
+    private static void addStationFlow(){
+ 	
     	System.out.println("\n------------ ADD STATION ------------");
         //String stationId = readNonEmpty("Station ID   : ");
         String name = readNonEmpty("Station name : ");
         String location = readNonEmpty("Location     : ");
         
-        stationService.addStation(stations.size(), name, location);
+        stationService.addStation(STATIONS.size(), name, location);
         
         try {
-        	FILE_MANAGER.saveStations(stationService.getStations());
+        	FILE_MANAGER.saveStations(STATIONS);
         	System.out.println("Station added successfully!");
         }catch(FileProcessingException e) {
         	System.out.println("Station was not added!");
@@ -700,9 +697,7 @@ public class Main {
     /**
      * Add-train flow for the admin.
      */
-    private static void addTrainFlow() throws FileProcessingException{
-    	
-    	List<Train> trains = FILE_MANAGER.loadTrains();
+    private static void addTrainFlow(){
     	
         System.out.println("\n------------ ADD TRAIN ------------");
         //String trainId = readNonEmpty("Train ID    : ");
@@ -722,10 +717,11 @@ public class Main {
             }
         }
         
-        trainService.addTrain(trains.size(), name, capacity);
+        trainService.addTrain(TRAINS.size(), name, capacity);
         
         try {
-        	FILE_MANAGER.saveTrains(trainService.getTrains());
+        	FILE_MANAGER.saveTrains(TRAINS);
+        	//FILE_MANAGER.saveTrains(trainService.getTrains());
         	System.out.println("Train added successfully!");
         }catch(FileProcessingException e) {
         	System.out.println("Train was not added!");
@@ -742,14 +738,16 @@ public class Main {
     /**
      * Create-route flow for the admin.
      */
-    private static void createRouteFlow() {
+    private static void createRouteFlow(){
+    	
+    	int size = ROUTES.size();
         System.out.println("\n------------ CREATE ROUTE ------------");
         if (STATIONS.size() < 2) {
             System.out.println("[Error] At least 2 stations are needed to create a route.");
             return;
         }
 
-        String routeId = readNonEmpty("Route ID       : ");
+        //String routeId = readNonEmpty("Route ID       : ");
 
         Station source = chooseStation("Select SOURCE station:", "Enter station ID: ");
         if (source == null) {
@@ -766,12 +764,20 @@ public class Main {
 
         double distance = readPositiveDouble("Distance (km)  : ");
 
-        if (routeService.createRoute(routeId, source, destination, distance)) {
-            System.out.println("[Success] Route created: " + routeId + " ("
-                    + source.getName() + " -> " + destination.getName() + ", "
-                    + distance + " km)");
+        if (routeService.createRoute(size, source, destination, distance)) {
+        	 try {
+             	FILE_MANAGER.saveRoutes(ROUTES);
+             	 System.out.println("[Success] Route created: " + routeService.generateNextRouteId(size) + " ("
+                          + source.getName() + " -> " + destination.getName() + ", "
+                          + distance + " km)");
+             	 
+             } catch(FileProcessingException e) {
+             	System.out.println("[Error] Could not create route. The route ID may already exist.");
+             }
         } else {
             System.out.println("[Error] Could not create route. The route ID may already exist.");
         }
+        
+       
     }
 }
