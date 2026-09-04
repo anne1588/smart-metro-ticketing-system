@@ -31,7 +31,7 @@ public class StationService {
      * @param location  the station location
      * @return true if added successfully, false if the ID already exists
      */
-    public boolean addStation(String stationId, String name, String location) {
+    /*public boolean addStation(String stationId, String name, String location) {
         // Validate unique ID (case-insensitive)
         for (Station station : stations) {
             if (station.getStationId().equalsIgnoreCase(stationId.trim())) {
@@ -40,6 +40,18 @@ public class StationService {
         }
         stations.add(new Station(stationId.trim(), name.trim(), location.trim()));
         return true;
+    }*/
+    
+    public String addStation(int size, String name, String location) {
+    	String stationId = generateNextStationId(size);
+    	stations.add(new Station(stationId, name, location));
+    	return stationId;
+    }
+    
+    public String generateNextStationId(int size) {
+    	//int nextNumber = stations.size();
+    	int nextNumber = size + 1;
+    	return String.format("ST%02d", nextNumber);
     }
 
     /**

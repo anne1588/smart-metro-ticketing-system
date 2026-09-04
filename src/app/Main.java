@@ -610,7 +610,9 @@ public class Main {
 
             switch (readInt()) {
                 case 1:
-                    addStationFlow();
+                    try {
+                    	addStationFlow();
+                    } catch(FileProcessingException e){}
                     break;
                 case 2:
                     stationService.viewAllStations();
@@ -619,7 +621,10 @@ public class Main {
                     searchStationFlow();
                     break;
                 case 4:
-                    addTrainFlow();
+                	try {
+                		addTrainFlow();
+                	} catch(FileProcessingException e) {}
+                    
                     break;
                 case 5:
                     trainService.viewAllTrains();
@@ -649,17 +654,29 @@ public class Main {
     /**
      * Add-station flow for the admin.
      */
-    private static void addStationFlow() {
-        System.out.println("\n------------ ADD STATION ------------");
-        String stationId = readNonEmpty("Station ID   : ");
+    private static void addStationFlow() throws FileProcessingException{
+
+    	List<Station> stations = FILE_MANAGER.loadStations();
+    	
+    	System.out.println("\n------------ ADD STATION ------------");
+        //String stationId = readNonEmpty("Station ID   : ");
         String name = readNonEmpty("Station name : ");
         String location = readNonEmpty("Location     : ");
+        
+        stationService.addStation(stations.size(), name, location);
+        
+        try {
+        	FILE_MANAGER.saveStations(stationService.getStations());
+        	System.out.println("Station added successfully!");
+        }catch(FileProcessingException e) {
+        	System.out.println("Station was not added!");
+        }
 
-        if (stationService.addStation(stationId, name, location)) {
+        /*if (stationService.addStation(stationId, name, location)) {
             System.out.println("[Success] Station added: " + name);
         } else {
             System.out.println("[Error] Station ID already exists: " + stationId);
-        }
+        }*/
     }
 
     /**
@@ -683,9 +700,12 @@ public class Main {
     /**
      * Add-train flow for the admin.
      */
-    private static void addTrainFlow() {
+    private static void addTrainFlow() throws FileProcessingException{
+    	
+    	List<Train> trains = FILE_MANAGER.loadTrains();
+    	
         System.out.println("\n------------ ADD TRAIN ------------");
-        String trainId = readNonEmpty("Train ID    : ");
+        //String trainId = readNonEmpty("Train ID    : ");
         String name = readNonEmpty("Train name  : ");
         int capacity;
         while (true) {
@@ -701,12 +721,22 @@ public class Main {
                 System.out.println("[Error] Please enter a valid number.");
             }
         }
+        
+        trainService.addTrain(trains.size(), name, capacity);
+        
+        try {
+        	FILE_MANAGER.saveTrains(trainService.getTrains());
+        	System.out.println("Train added successfully!");
+        }catch(FileProcessingException e) {
+        	System.out.println("Train was not added!");
+        }
+        
 
-        if (trainService.addTrain(trainId, name, capacity)) {
+        /*if (trainService.addTrain(trainId, name, capacity)) {
             System.out.println("[Success] Train added: " + name);
         } else {
             System.out.println("[Error] Train ID already exists: " + trainId);
-        }
+        }*/
     }
 
     /**

@@ -29,7 +29,7 @@ public class TrainService {
      * @param capacity the maximum passenger capacity
      * @return true if added successfully, false if the ID already exists
      */
-    public boolean addTrain(String trainId, String name, int capacity) {
+    /*public boolean addTrain(String trainId, String name, int capacity) {
         for (Train train : trains) {
             if (train.getTrainId().equalsIgnoreCase(trainId.trim())) {
                 return false;
@@ -37,6 +37,17 @@ public class TrainService {
         }
         trains.add(new Train(trainId.trim(), name.trim(), capacity));
         return true;
+    }*/
+    
+    public String addTrain(int size, String name, int capacity) {
+        String trainId = generateNextTrainId(size);
+        trains.add(new Train(trainId, name.trim(), capacity));
+        return trainId;
+    }
+    
+    private String generateNextTrainId(int size) {
+        int nextNumber = size + 1;
+        return String.format("TR%02d", nextNumber);
     }
 
     /**

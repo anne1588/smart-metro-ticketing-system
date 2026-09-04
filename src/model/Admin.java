@@ -4,16 +4,10 @@ import enums.UserRole;
 
 /**
  * Represents an administrator of the metro system.
- * <p>An admin manages stations, trains, routes, users and reports.
- * An admin has no e-wallet balance and cannot buy tickets.</p>
+ * An admin manages stations, trains, routes, users and reports.
+ * An admin has no e-wallet balance and cannot buy tickets.
  */
 public class Admin extends User {
-
-    /**
-     * Default constructor required by the file loader.
-     */
-    public Admin() {
-    }
 
     /**
      * Creates a new admin.

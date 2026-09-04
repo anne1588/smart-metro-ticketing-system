@@ -4,13 +4,10 @@ import enums.UserRole;
 
 /**
  * Abstract base class for every user of the system.
- * <p>
  * Both {@link Passenger} and {@link Admin} inherit from this class.
  * The class is abstract, so it cannot be instantiated directly —
  * it only defines common behaviour shared by all users.
- * </p>
- * <p>Encapsulation: all fields are private and only reachable
- * through public getters/setters.</p>
+ * Encapsulation: all fields are private and only reachable through public getters/setters.
  */
 public abstract class User {
 
@@ -18,12 +15,6 @@ public abstract class User {
     private String name;
     private String password;
     private UserRole role;
-
-    /**
-     * Default constructor (used by subclasses / file loader).
-     */
-    protected User() {
-    }
 
     /**
      * Creates a user with the given details.

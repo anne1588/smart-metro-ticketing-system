@@ -2,3 +2,4 @@
 R01|ST01,KL Sentral,Kuala Lumpur|ST02,Masjid Jamek,Kuala Lumpur|5.5
 R02|ST01,KL Sentral,Kuala Lumpur|ST03,Pasar Seni,Kuala Lumpur|7.2
 R03|ST02,Masjid Jamek,Kuala Lumpur|ST04,Bukit Bintang,Kuala Lumpur|3.8
+r04|ST01,KL Sentral,Kuala Lumpur|ST04,Bukit Bintang,Kuala Lumpur|20.0
