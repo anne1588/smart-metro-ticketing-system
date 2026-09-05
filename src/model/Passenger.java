@@ -15,12 +15,6 @@ public class Passenger extends User {
     private double balance;
     private final List<Ticket> tickets;
 
-    /**
-     * Default constructor required by the file loader.
-     */
-    public Passenger() {
-        this.tickets = new ArrayList<>();
-    }
 
     /**
      * Creates a new passenger.

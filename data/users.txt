@@ -1,5 +1,8 @@
 # Format: email|name|password|balance|role
+anne@email.com|Anne|Anne1234|120.00|PASSENGER
 alice@email.com|Alice Tan|alice123|100.00|PASSENGER
 n@|n|n|193.45|PASSENGER
-bob@email.com|Bob Lee|bob123|50.00|PASSENGER
+hans@email.com|Hans|Hans1234|20.00|PASSENGER
 admin@metro.my|System Admin|admin123|0.00|ADMIN
+jack@email.com|Jack|Jack1234|50.00|PASSENGER
+bob@email.com|Bob Lee|bob123|50.00|PASSENGER

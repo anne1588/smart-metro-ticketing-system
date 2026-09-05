@@ -248,6 +248,27 @@ public class Main {
             return input;
         }
     }
+    
+    private static String passwordValidation(String prompt) {
+    	while (true) {
+    		System.out.print(prompt);
+            String input = SCANNER.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.println("[Error] Input cannot be empty.");
+                continue;
+            }
+            if(input.length() < 8) {
+            	System.out.println("[Error] Password must be at least 8 characters long.");
+            	continue;
+            }
+            if(!(input.matches(".*[A-Z].*")) || !(input.matches(".*[0-9].*"))) {
+            	System.out.println("[Error] Password must contain at least one uppercase letter and one number.");
+            	continue;
+            }
+            
+            return input;
+        }
+    }
 
     // ------------------------------------------------------------------
     // Registration & login
@@ -268,8 +289,8 @@ public class Main {
                 System.out.println("[Error] Email cannot be empty.");
                 continue;
             }
-            if (!email.contains("@")) {
-                System.out.println("[Error] Invalid email format (must contain @).");
+            if (!email.contains("@") || !email.contains(".")) {
+                System.out.println("[Error] Invalid email format (must contain @ and .com/my/org).");
                 continue;
             }
             if (userService.isEmailTaken(email)) {
@@ -279,12 +300,19 @@ public class Main {
             break;
         }
 
-        String password = readNonEmpty("Password        : ");
-        double balance = readPositiveDouble("Initial balance : RM ");
+        String password = passwordValidation("Password        : ");
+        double balance = readPositiveDouble("How much do you want to Top-up? : RM ");
+        
+        
 
         boolean ok = userService.registerPassenger(email, name, password, balance);
         if (ok) {
-            System.out.println("\n[Success] Registration complete. You can now log in.");
+        	try {
+        		FILE_MANAGER.saveUsers(USERS);
+        		System.out.println("\n[Success] Registration complete. You can now log in.");
+        	}catch(FileProcessingException e) {
+				System.out.println("\n[Error] Registration failed while saving data: " + e.getMessage());
+			}
         } else {
             System.out.println("\n[Error] Registration failed (email already exists).");
         }
@@ -372,10 +400,17 @@ public class Main {
      * @param passenger the passenger
      */
     private static void topUpBalance(Passenger passenger) {
-        double amount = readPositiveDouble("\nEnter top-up amount : RM ");
+    	System.out.println("\n============ TOP-UP BALANCE ===========");
+    	System.out.println("Current balance: RM " + String.format("%.2f", passenger.getBalance()));
+        double amount = readPositiveDouble("Enter top-up amount : RM ");
         if (userService.topUpBalance(passenger, amount)) {
-            System.out.println("[Success] Top-up complete. New balance: RM "
-                    + String.format("%.2f", passenger.getBalance()));
+        	try {
+        		FILE_MANAGER.saveUsers(USERS);
+                System.out.println("[Success] Top-up complete. New balance: RM "
+                        + String.format("%.2f", passenger.getBalance()));
+        	}catch(FileProcessingException e) {
+				System.out.println("[Error] Top-up failed while saving data: " + e.getMessage());
+			}    
         } else {
             System.out.println("[Error] Top-up failed. Amount must be positive.");
         }
