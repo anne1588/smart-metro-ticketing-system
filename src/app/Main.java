@@ -233,6 +233,31 @@ public class Main {
     }
 
     /**
+     * Reads a top-up amount where entering zero aborts the flow.
+     *
+     * @param prompt the prompt to show
+     * @return the entered amount, or {@code null} if the user aborts
+     */
+    private static Double readTopUpAmount(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                double value = Double.parseDouble(SCANNER.nextLine().trim());
+                if (value < 0) {
+                    System.out.println("[Error] Amount must be greater than 0.");
+                    continue;
+                }
+                if (value == 0) {
+                    return null;
+                }
+                return value;
+            } catch (NumberFormatException e) {
+                System.out.println("[Error] Please enter a valid number.");
+            }
+        }
+    }
+
+    /**
      * Reads a non-blank string from the console.
      *
      * @param prompt the prompt to show
@@ -424,7 +449,12 @@ public class Main {
     private static void topUpBalance(Passenger passenger) {
     	System.out.println("\n============ TOP-UP BALANCE ===========");
     	System.out.println("Current balance: RM " + String.format("%.2f", passenger.getBalance()));
-        double amount = readPositiveDouble("Enter top-up amount : RM ");
+        Double amount = readTopUpAmount("Enter top-up amount : RM ");
+        if (amount == null) {
+            System.out.println("[Info] Top-up cancelled.");
+            return;
+        }
+
         if (userService.topUpBalance(passenger, amount)) {
         	try {
         		FILE_MANAGER.saveUsers(USERS);
