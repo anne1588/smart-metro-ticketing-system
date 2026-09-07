@@ -10,12 +10,12 @@ import exception.TicketNotFoundException;
 import fare.FareCalculator;
 import model.Passenger;
 import model.Route;
-import model.Station;
+//import model.Station;
 import model.Ticket;
 
 /**
  * Provides ticket-related operations: buying tickets (with automatic fare
- * calculation), cancelling tickets (with refund), and viewing/sorting tickets.
+ * calculation), canceling tickets (with refund), and viewing/sorting tickets.
  */
 public class TicketService {
 
@@ -107,6 +107,13 @@ public class TicketService {
         return ticket;
     }
     
+    /**
+     * Use an ACTIVE ticket by ID. The ticket status changes to USED.
+     *
+     * @param ticketId the ticket ID to use
+     * @return the use ticket
+     * @throws TicketNotFoundException if the ticket ID does not exist
+     */    
     public Ticket useTicket(String ticketId) throws TicketNotFoundException{
     	Ticket ticket = findTicketById(ticketId);
 		if (ticket == null) {

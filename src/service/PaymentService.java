@@ -1,6 +1,5 @@
 package service;
 
-import enums.TicketStatus;
 import model.Passenger;
 import model.Ticket;
 import payment.Payment;
@@ -18,7 +17,7 @@ public class PaymentService {
     /**
      * Processes the payment for a ticket using the given payment method.
      * <p>On success, the passenger's e-wallet is charged the ticket fare
-     * and the ticket status is updated to {@code USED}.</p>
+     * and the ticket remains {@code ACTIVE} until it is explicitly used.</p>
      *
      * @param payment   the payment method (Cash or Card)
      * @param passenger the passenger paying for the ticket
@@ -50,9 +49,6 @@ public class PaymentService {
 
         // 3. Deduct the amount from the passenger's e-wallet.
         passenger.deduct(amount);
-
-        // 4. Mark the ticket as USED.
-        ticket.setStatus(TicketStatus.USED);
 
         System.out.println("[Payment] SUCCESS: RM " + String.format("%.2f", amount)
                 + " paid via " + payment.getPaymentMethod() + ".");
