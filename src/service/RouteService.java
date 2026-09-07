@@ -109,4 +109,20 @@ public class RouteService {
         }
         System.out.println("========================================");
     }
+    
+    /**
+     * Displays all routes except RouteID and will be used for ticket purchase
+     */
+    public void viewAllRoutesForTicket() {
+    	if(routes.isEmpty()) {
+    		System.out.println("\n[Info] No routes available yet.");
+            return;
+    	}
+    	System.out.println("\n============== ALL ROUTES ==============");
+        int index = 1;
+        for (Route route : routes) {
+			System.out.println(index++ + ". " + route.getSource().getName() + " -> " + route.getDestination().getName() + " | Distance: " + route.getDistance() + " km");
+		}
+        System.out.println("========================================");
+    }
 }

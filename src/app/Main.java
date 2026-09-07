@@ -1,5 +1,6 @@
 package app;
 
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -248,6 +249,23 @@ public class Main {
             return input;
         }
     }
+
+    /**
+     * Reads a password from the console with character masking (asterisks).
+     *
+     * @param prompt the prompt to show
+     * @return the entered password
+     */
+    private static String readPassword(String prompt) {
+        System.out.print(prompt);
+        Console console = System.console();
+        if (console == null) {
+            // Fallback for environments where System.console() is null (e.g., IDEs)
+            return SCANNER.nextLine().trim();
+        }
+        char[] passwordArray = console.readPassword();
+        return (passwordArray != null) ? new String(passwordArray) : "";
+    }
     
     private static String passwordValidation(String prompt) {
     	while (true) {
@@ -324,7 +342,7 @@ public class Main {
     private static void login() {
         System.out.println("\n----------------- LOGIN -----------------");
         String email = readNonEmpty("Email    : ");
-        String password = readNonEmpty("Password : ");
+        String password = readPassword("Password : ");
 
         try {
             User user = userService.login(email, password);
@@ -357,11 +375,11 @@ public class Main {
             System.out.println("\n------------ Passenger Menu ------------");
             System.out.println("1. View Profile");
             System.out.println("2. Top Up Balance");
-            System.out.println("3. View Routes");
-            System.out.println("4. Buy Ticket");
-            System.out.println("5. Cancel Ticket");
-            System.out.println("6. View My Tickets");
-            System.out.println("7. Logout");
+            //System.out.println("3. View Routes");
+            System.out.println("3. Buy Ticket");
+            System.out.println("4. Cancel Ticket");
+            System.out.println("5. View My Tickets");
+            System.out.println("6. Logout");
             System.out.print("Choose an option: ");
 
             switch (readInt()) {
@@ -371,20 +389,20 @@ public class Main {
                 case 2:
                     topUpBalance(passenger);
                     break;
+                //case 3:
+                	//routeService.viewAllRoutes();
+                	//break;
                 case 3:
-                	routeService.viewAllRoutes();
-                	break;
-                case 4:
                     buyTicketFlow(passenger);
                     break;
-                case 5:
+                case 4:
                     cancelTicketFlow(passenger);
                     break;
-                case 6:
+                case 5:
                     ticketService.displayTickets(
                             ticketService.getTicketsForPassenger(passenger), "MY TICKETS");
                     break;
-                case 7:
+                case 6:
                     System.out.println("\n[Info] Logged out. See you soon!");
                     inMenu = false;
                     break;
@@ -421,13 +439,15 @@ public class Main {
     // ------------------------------------------------------------------
 
     /**
-     * Full ticket-buying flow: choose source & destination station,
+     * Full ticket-buying flow: View routes, choose source & destination station,
      * choose ticket type, review fare, then pay by cash or card.
      *
      * @param passenger the passenger buying the ticket
      */
     private static void buyTicketFlow(Passenger passenger) {
         System.out.println("\n------------ BUY TICKET ------------");
+        
+        routeService.viewAllRoutesForTicket();
 
         if (STATIONS.size() < 2) {
             System.out.println("[Error] At least 2 stations are required to buy a ticket.");
