@@ -106,6 +106,19 @@ public class TicketService {
         ticket.setStatus(TicketStatus.CANCELLED);
         return ticket;
     }
+    
+    public Ticket useTicket(String ticketId) throws TicketNotFoundException{
+    	Ticket ticket = findTicketById(ticketId);
+		if (ticket == null) {
+			throw new TicketNotFoundException("Ticket not found with ID: " + ticketId);
+		}
+		if (ticket.getStatus() != TicketStatus.ACTIVE) {
+			throw new TicketNotFoundException("Ticket " + ticketId
+					+ " cannot be used because its status is " + ticket.getStatus() + ".");
+		}
+		ticket.setStatus(TicketStatus.USED);
+		return ticket;
+    }
 
     /**
      * Finds a ticket by its ID.
