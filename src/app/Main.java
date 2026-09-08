@@ -409,12 +409,12 @@ public class Main {
             System.out.println("\n------------ Passenger Menu ------------");
             System.out.println("1. View Profile");
             System.out.println("2. Top Up Balance");
-            //System.out.println("3. View Routes");
-            System.out.println("3. Buy Ticket");
-            System.out.println("4. Use Ticket");
-            System.out.println("5. Cancel Ticket");
-            System.out.println("6. View My Tickets");
-            System.out.println("7. Logout");
+            System.out.println("3. Search Station");
+            System.out.println("4. Buy Ticket");
+            System.out.println("5. Use Ticket");
+            System.out.println("6. Cancel Ticket");
+            System.out.println("7. View My Tickets");
+            System.out.println("8. Logout");
             System.out.print("Choose an option: ");
 
             switch (readInt()) {
@@ -424,28 +424,28 @@ public class Main {
                 case 2:
                     topUpBalance(passenger);
                     break;
-                //case 3:
-                	//routeService.viewAllRoutes();
-                	//break;
                 case 3:
-                    buyTicketFlow(passenger);
+                    searchStationFlow();
                     break;
                 case 4:
-                	useTicketFlow(passenger);
-                	break;
+                    buyTicketFlow(passenger);
+                    break;
                 case 5:
-                    cancelTicketFlow(passenger);
+                    useTicketFlow(passenger);
                     break;
                 case 6:
+                    cancelTicketFlow(passenger);
+                    break;
+                case 7:
                     ticketService.displayTickets(
                             ticketService.getTicketsForPassenger(passenger), "MY TICKETS");
                     break;
-                case 7:
+                case 8:
                     System.out.println("\n[Info] Logged out. See you soon!");
                     inMenu = false;
                     break;
                 default:
-                    System.out.println("[Error] Invalid option. Please choose 1 - 6.");
+                    System.out.println("[Error] Invalid option. Please choose 1 - 8.");
             }
         }
     }
@@ -828,7 +828,7 @@ public class Main {
     }
 
     /**
-     * Search-station flow for the admin.
+     * Search-station flow (used by both the admin and passenger menus).
      */
     private static void searchStationFlow() {
         System.out.println("\n------------ SEARCH STATION ------------");
