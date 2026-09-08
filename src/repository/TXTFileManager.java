@@ -207,8 +207,8 @@ public class TXTFileManager implements FileManager {
                 continue;
             }
             String[] p = line.split("\\|", -1);
-            // p = [ticketId, passengerEmail, srcId, dstId, type, status, fare]
-            if (p.length < 7) {
+            // p = [ticketId, passengerEmail, srcId, dstId, type, status, fare, dateOfPurchase]
+            if (p.length < 9) {
                 continue;
             }
             User user = users.get(p[1].trim());
@@ -223,9 +223,12 @@ public class TXTFileManager implements FileManager {
             TicketType type = parseTicketType(p[4].trim());
             TicketStatus status = parseTicketStatus(p[5].trim());
             double fare = parseDoubleSafe(p[6]);
+            String dateOfPurchase = p[7].trim();
+            String dateOfUsed = p[8].trim();
 
             Ticket ticket = new Ticket(p[0].trim(), (Passenger) user,
-                    source, destination, type, fare);
+                    source, destination, type, fare, dateOfPurchase);
+            ticket.setDateOfUsed(dateOfUsed);
             ticket.setStatus(status);
             tickets.add(ticket);
             ((Passenger) user).addTicket(ticket);
@@ -236,7 +239,7 @@ public class TXTFileManager implements FileManager {
     @Override
     public void saveTickets(List<Ticket> tickets) throws FileProcessingException {
         List<String> lines = new ArrayList<>();
-        lines.add("# Format: ticketId|passengerEmail|sourceId|destId|type|status|fare");
+        lines.add("# Format: ticketId|passengerEmail|sourceId|destId|type|status|fare|dateOfPurchase|dateOfUsed");
         for (Ticket ticket : tickets) {
             lines.add(ticket.getTicketId() + "|"
                     + ticket.getPassenger().getEmail() + "|"
@@ -244,7 +247,9 @@ public class TXTFileManager implements FileManager {
                     + ticket.getDestination().getStationId() + "|"
                     + ticket.getTicketType() + "|"
                     + ticket.getStatus() + "|"
-                    + String.format("%.2f", ticket.getFare()));
+                    + String.format("%.2f", ticket.getFare()) + "|"
+                    + ticket.getDateOfPurchase() + "|"
+                    + ticket.getDateOfUsed());
         }
         writeAllLines(TICKETS_FILE, lines);
     }

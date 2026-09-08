@@ -20,12 +20,9 @@ public class Ticket implements Comparable<Ticket> {
     private TicketType ticketType;
     private TicketStatus status;
     private double fare;
+    private String dateOfPurchase; // New field to store the date of purchase
+    private String dateOfUsed; // New field to store the date of used
 
-    /**
-     * Default constructor required by the file loader.
-     */
-    public Ticket() {
-    }
 
     /**
      * Creates a new ticket.
@@ -36,9 +33,11 @@ public class Ticket implements Comparable<Ticket> {
      * @param destination the destination station
      * @param ticketType  the ticket type (SINGLE / DAILY / MONTHLY)
      * @param fare        the calculated fare in RM
+     * @param dateOfPurchase the date when the ticket was purchased
+     * @param dateOfUsed the date when the ticket was used (if applicable)
      */
     public Ticket(String ticketId, Passenger passenger, Station source,
-                  Station destination, TicketType ticketType, double fare) {
+                  Station destination, TicketType ticketType, double fare, String dateOfPurchase) {
         this.ticketId = ticketId;
         this.passenger = passenger;
         this.source = source;
@@ -46,6 +45,8 @@ public class Ticket implements Comparable<Ticket> {
         this.ticketType = ticketType;
         this.status = TicketStatus.ACTIVE;   // default status
         this.fare = fare;
+        this.dateOfPurchase = dateOfPurchase; // set the date of purchase
+        this.dateOfUsed = "-"; // initialize date of used as null
     }
 
     /**
@@ -145,6 +146,22 @@ public class Ticket implements Comparable<Ticket> {
     public void setFare(double fare) {
         this.fare = fare;
     }
+    
+    public String getDateOfPurchase() {
+		return dateOfPurchase;
+	}
+    
+    public void setDateOfPurchase(String dateOfPurchase) {
+    	this.dateOfPurchase = dateOfPurchase;
+    }
+    
+    public String getDateOfUsed() {
+    	return dateOfUsed;
+    }
+    
+    public void setDateOfUsed(String dateOfUsed) {
+		this.dateOfUsed = dateOfUsed;
+	}
 
     /**
      * Compares this ticket with another ticket by fare.
@@ -171,6 +188,8 @@ public class Ticket implements Comparable<Ticket> {
                 + " -> To: " + destination.getName()
                 + " | Type: " + ticketType
                 + " | Status: " + status
-                + " | Fare: RM " + String.format("%.2f", fare);
+                + " | Fare: RM " + String.format("%.2f", fare)
+                + " | Date of Purchase: " + dateOfPurchase
+        		+ " | Date of Used: " + dateOfUsed;
     }
 }

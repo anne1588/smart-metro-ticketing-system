@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import enums.TicketStatus;
 import enums.TicketType;
@@ -54,6 +56,8 @@ public class Main {
     private static final List<Ticket> TICKETS = new ArrayList<>();
 
     private static final Scanner SCANNER = new Scanner(System.in);
+    
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     // ---- Polymorphism: FileManager fm = new TXTFileManager(); ----
     private static final FileManager FILE_MANAGER = new TXTFileManager();
@@ -163,6 +167,11 @@ public class Main {
         FILE_MANAGER.saveTrains(TRAINS);
         FILE_MANAGER.saveRoutes(ROUTES);
         FILE_MANAGER.saveTickets(TICKETS);
+    }
+    
+    // Calling this generates the live time at the moment it is called
+    public static String getCurrentDateTime() {
+        return LocalDateTime.now().format(FORMATTER);
     }
 
     // ------------------------------------------------------------------
@@ -540,6 +549,7 @@ public class Main {
 
         // Create the ticket (status ACTIVE) and process the payment.
         Ticket ticket = ticketService.buyTicket(passenger, route, type);
+        ticket.setDateOfPurchase(getCurrentDateTime());
 
         if (processPaymentForTicket(passenger, ticket)) {
         	try {
@@ -720,6 +730,7 @@ public class Main {
         String ticketId = SCANNER.nextLine().trim();
         try {
             Ticket used = ticketService.useTicket(ticketId);
+            used.setDateOfUsed(getCurrentDateTime());
             System.out.println("[Success] Ticket " + used.getTicketId()
                     + " (" + used.getSource().getName() + " -> " + used.getDestination().getName()
                     + ") has been successfully used.");

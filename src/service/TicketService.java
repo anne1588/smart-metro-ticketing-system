@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import enums.TicketStatus;
 import enums.TicketType;
 import exception.TicketNotFoundException;
@@ -22,6 +25,10 @@ public class TicketService {
     private final List<Ticket> tickets;
     private final FareCalculator fareCalculator;
     private int ticketCounter;
+    
+    LocalDateTime now = LocalDateTime.now();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+   // System.out.println("Formatted: " + now.format(formatter));
 
     /**
      * Creates a ticket service.
@@ -77,7 +84,7 @@ public class TicketService {
         double fare = fareCalculator.calculateFare(route.getDistance(), ticketType);
 
         Ticket ticket = new Ticket(ticketId, passenger,
-                route.getSource(), route.getDestination(), ticketType, fare);
+                route.getSource(), route.getDestination(), ticketType, fare, now.format(formatter));
         tickets.add(ticket);
         passenger.addTicket(ticket);
         return ticket;
@@ -123,6 +130,7 @@ public class TicketService {
 			throw new TicketNotFoundException("Ticket " + ticketId
 					+ " cannot be used because its status is " + ticket.getStatus() + ".");
 		}
+		//ticket.setDateOfUsed(dateOfUsed);
 		ticket.setStatus(TicketStatus.USED);
 		return ticket;
     }
