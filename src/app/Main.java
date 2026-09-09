@@ -129,6 +129,8 @@ public class Main {
         ticketService = new TicketService(TICKETS, FARE_CALCULATOR);
         paymentService = new PaymentService();
         reportService = new ReportService(TICKETS);
+        // Mark tickets that expired while the system was not running.
+        ticketService.markExpiredTickets();
     }
 
     /**
@@ -423,6 +425,9 @@ public class Main {
     private static void passengerMenu(Passenger passenger) {
         boolean inMenu = true;
         while (inMenu) {
+            // Refresh ticket statuses so expired tickets are handled correctly.
+            ticketService.markExpiredTickets();
+
             System.out.println("\n------------ Passenger Menu ------------");
             System.out.println("1. View Profile");
             System.out.println("2. Top Up Balance");
@@ -549,6 +554,7 @@ public class Main {
         System.out.println("Destination : " + destination.getName());
         System.out.println("Distance    : " + route.getDistance() + " km");
         System.out.println("Ticket type : " + type);
+        System.out.println("Validity    : " + ticketValidity(type));
         System.out.println("Fare        : RM " + String.format("%.2f", fare));
 
         if (passenger.getBalance() < fare) {
@@ -567,6 +573,7 @@ public class Main {
         // Create the ticket (status ACTIVE) and process the payment.
         Ticket ticket = ticketService.buyTicket(passenger, route, type);
         ticket.setDateOfPurchase(getCurrentDateTime());
+        ticket.updateExpiryDate(); // set expiry based on the ticket type
 
         if (processPaymentForTicket(passenger, ticket)) {
         	try {
@@ -618,9 +625,9 @@ public class Main {
      */
     private static TicketType chooseTicketType() {
         System.out.println("\nSelect ticket type:");
-        System.out.println("  1. SINGLE   (base fare = distance x RM 0.50)");
-        System.out.println("  2. DAILY    (base fare x 2)");
-        System.out.println("  3. MONTHLY  (base fare x 20)");
+        System.out.println("  1. SINGLE   (" + ticketValidity(TicketType.SINGLE) + " | base fare = distance x RM 0.50)");
+        System.out.println("  2. DAILY    (" + ticketValidity(TicketType.DAILY) + " | base fare x 2)");
+        System.out.println("  3. MONTHLY  (" + ticketValidity(TicketType.MONTHLY) + " | base fare x 20)");
         while(true) {
         	System.out.print("Enter 1 - 3 (or 0 to abort): ");
             switch (readInt()) {
@@ -638,6 +645,20 @@ public class Main {
             }
         }
         
+    }
+
+    /**
+     * Returns the validity period of a ticket type as human-friendly text.
+     *
+     * @param type the ticket type
+     * @return "expires after 24 hours" for SINGLE/DAILY, "expires after 30 days" for MONTHLY
+     */
+    private static String ticketValidity(TicketType type) {
+        if (type == TicketType.MONTHLY) {
+            return "expires after 30 days";
+        }
+        // SINGLE and DAILY tickets both expire 24 hours after purchase.
+        return "expires after 24 hours";
     }
 
     /**

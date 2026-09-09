@@ -1,5 +1,8 @@
 package model;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import enums.TicketStatus;
 import enums.TicketType;
 
@@ -7,11 +10,17 @@ import enums.TicketType;
  * Represents a metro ticket.
  * <p>Every ticket has a unique ticket ID, the passenger who bought it,
  * a source and destination station, a ticket type, a status
- * (default ACTIVE) and the fare amount in RM.</p>
+ * (default ACTIVE), the fare amount in RM and an expiry date.</p>
+ * <p>The expiry date is derived from the date of purchase:
+ * SINGLE and DAILY tickets expire 24 hours after purchase, while a
+ * MONTHLY ticket expires 30 days after purchase.</p>
  * <p>Implements {@link Comparable} so tickets can be sorted by fare
  * (bonus feature).</p>
  */
 public class Ticket implements Comparable<Ticket> {
+
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private String ticketId;
     private Passenger passenger;
@@ -22,6 +31,7 @@ public class Ticket implements Comparable<Ticket> {
     private double fare;
     private String dateOfPurchase; // New field to store the date of purchase
     private String dateOfUsed; // New field to store the date of used
+    private String expiryDate; // Date/time when the ticket stops being valid
 
 
     /**
@@ -47,6 +57,7 @@ public class Ticket implements Comparable<Ticket> {
         this.fare = fare;
         this.dateOfPurchase = "-"; // set the date of purchase
         this.dateOfUsed = "-"; // initialize date of used as null
+        this.expiryDate = "-"; // set once the date of purchase is known
     }
 
     /**
@@ -164,6 +175,69 @@ public class Ticket implements Comparable<Ticket> {
 	}
 
     /**
+     * @return the date/time when this ticket expires
+     */
+    public String getExpiryDate() {
+        return expiryDate;
+    }
+
+    /**
+     * @param expiryDate the date/time when this ticket expires
+     */
+    public void setExpiryDate(String expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    /**
+     * Recalculates and stores the expiry date of this ticket from its
+     * date of purchase and ticket type:
+     * <ul>
+     *   <li>SINGLE - 24 hours after purchase</li>
+     *   <li>DAILY  - 24 hours after purchase</li>
+     *   <li>MONTHLY - 30 days after purchase</li>
+     * </ul>
+     * <p>Should be called whenever the date of purchase is assigned.</p>
+     */
+    public void updateExpiryDate() {
+        if (dateOfPurchase == null || dateOfPurchase.trim().isEmpty()
+                || "-".equals(dateOfPurchase.trim())) {
+            expiryDate = "-";
+            return;
+        }
+        try {
+            LocalDateTime purchase = LocalDateTime.parse(dateOfPurchase.trim(), FORMATTER);
+            LocalDateTime expiry;
+            if (ticketType == TicketType.MONTHLY) {
+                expiry = purchase.plusDays(30);
+            } else {
+                // SINGLE and DAILY both expire 24 hours after purchase.
+                expiry = purchase.plusHours(24);
+            }
+            expiryDate = expiry.format(FORMATTER);
+        } catch (Exception e) {
+            expiryDate = "-";
+        }
+    }
+
+    /**
+     * Checks whether the validity period of this ticket has already passed.
+     *
+     * @return true if the current time is after the expiry date, false otherwise
+     */
+    public boolean isExpired() {
+        if (expiryDate == null || expiryDate.trim().isEmpty()
+                || "-".equals(expiryDate.trim())) {
+            return false;
+        }
+        try {
+            LocalDateTime expiry = LocalDateTime.parse(expiryDate.trim(), FORMATTER);
+            return LocalDateTime.now().isAfter(expiry);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Compares this ticket with another ticket by fare.
      * Tickets with a higher fare sort later.
      *
@@ -190,6 +264,7 @@ public class Ticket implements Comparable<Ticket> {
                 + " | Status: " + status
                 + " | Fare: RM " + String.format("%.2f", fare)
                 + " | Date of Purchase: " + dateOfPurchase
-        		+ " | Date of Used: " + dateOfUsed;
+        		+ " | Date of Used: " + dateOfUsed
+                + " | Expiry Date: " + expiryDate;
     }
 }

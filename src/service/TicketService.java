@@ -103,6 +103,13 @@ public class TicketService {
         if (ticket == null) {
             throw new TicketNotFoundException("Ticket not found with ID: " + ticketId);
         }
+        // A ticket whose validity period has passed can no longer be cancelled/refunded.
+        if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
+            ticket.setStatus(TicketStatus.EXPIRED);
+            throw new TicketNotFoundException("Ticket " + ticketId
+                    + " has expired on " + ticket.getExpiryDate()
+                    + " and can no longer be cancelled.");
+        }
         if (ticket.getStatus() != TicketStatus.ACTIVE) {
             throw new TicketNotFoundException("Ticket " + ticketId
                     + " cannot be cancelled because its status is " + ticket.getStatus() + ".");
@@ -126,6 +133,13 @@ public class TicketService {
 		if (ticket == null) {
 			throw new TicketNotFoundException("Ticket not found with ID: " + ticketId);
 		}
+		// An expired ticket can no longer be used for travel.
+		if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
+			ticket.setStatus(TicketStatus.EXPIRED);
+			throw new TicketNotFoundException("Ticket " + ticketId
+					+ " has expired on " + ticket.getExpiryDate()
+					+ " and can no longer be used.");
+		}
 		if (ticket.getStatus() != TicketStatus.ACTIVE) {
 			throw new TicketNotFoundException("Ticket " + ticketId
 					+ " cannot be used because its status is " + ticket.getStatus() + ".");
@@ -133,6 +147,20 @@ public class TicketService {
 		//ticket.setDateOfUsed(dateOfUsed);
 		ticket.setStatus(TicketStatus.USED);
 		return ticket;
+    }
+
+    /**
+     * Marks every ACTIVE ticket whose expiry date has already passed as EXPIRED.
+     * <p>Called on startup and whenever the ticket menus are shown, so that
+     * tickets that are no longer valid are always displayed and handled as
+     * EXPIRED instead of ACTIVE.</p>
+     */
+    public void markExpiredTickets() {
+        for (Ticket ticket : tickets) {
+            if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
+                ticket.setStatus(TicketStatus.EXPIRED);
+            }
+        }
     }
 
     /**

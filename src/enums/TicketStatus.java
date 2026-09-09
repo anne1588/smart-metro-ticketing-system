@@ -6,11 +6,14 @@ package enums;
  *   <li>ACTIVE    - valid and ready for travel</li>
  *   <li>USED      - travel completed / ticket consumed</li>
  *   <li>CANCELLED - cancelled and refunded</li>
+ *   <li>EXPIRED   - validity period has passed (SINGLE/DAILY = 24 hours,
+ *                   MONTHLY = 30 days after purchase)</li>
  * </ul>
  */
 public enum TicketStatus {
 
     ACTIVE,
     USED,
-    CANCELLED
+    CANCELLED,
+    EXPIRED
 }

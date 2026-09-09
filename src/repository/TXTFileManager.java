@@ -207,7 +207,8 @@ public class TXTFileManager implements FileManager {
                 continue;
             }
             String[] p = line.split("\\|", -1);
-            // p = [ticketId, passengerEmail, srcId, dstId, type, status, fare, dateOfPurchase]
+            // p = [ticketId, passengerEmail, srcId, dstId, type, status, fare,
+            //      dateOfPurchase, dateOfUsed, expiryDate(optional)]
             if (p.length < 9) {
                 continue;
             }
@@ -231,6 +232,15 @@ public class TXTFileManager implements FileManager {
             ticket.setDateOfPurchase(dateOfPurchase);
             ticket.setDateOfUsed(dateOfUsed);
             ticket.setStatus(status);
+            if (p.length >= 10) {
+                ticket.setExpiryDate(p[9].trim());
+            }
+            // Backwards compatibility: if no expiry date is stored, compute it
+            // from the date of purchase and the ticket type.
+            if (ticket.getExpiryDate() == null || ticket.getExpiryDate().trim().isEmpty()
+                    || "-".equals(ticket.getExpiryDate().trim())) {
+                ticket.updateExpiryDate();
+            }
             tickets.add(ticket);
             ((Passenger) user).addTicket(ticket);
         }
@@ -240,7 +250,7 @@ public class TXTFileManager implements FileManager {
     @Override
     public void saveTickets(List<Ticket> tickets) throws FileProcessingException {
         List<String> lines = new ArrayList<>();
-        lines.add("# Format: ticketId|passengerEmail|sourceId|destId|type|status|fare|dateOfPurchase|dateOfUsed");
+        lines.add("# Format: ticketId|passengerEmail|sourceId|destId|type|status|fare|dateOfPurchase|dateOfUsed|expiryDate");
         for (Ticket ticket : tickets) {
             lines.add(ticket.getTicketId() + "|"
                     + ticket.getPassenger().getEmail() + "|"
@@ -250,7 +260,8 @@ public class TXTFileManager implements FileManager {
                     + ticket.getStatus() + "|"
                     + String.format("%.2f", ticket.getFare()) + "|"
                     + ticket.getDateOfPurchase() + "|"
-                    + ticket.getDateOfUsed());
+                    + ticket.getDateOfUsed() + "|"
+                    + ticket.getExpiryDate());
         }
         writeAllLines(TICKETS_FILE, lines);
     }
