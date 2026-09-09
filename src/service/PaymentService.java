@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 import model.Passenger;
 import model.Ticket;
 import payment.Payment;
-import util.Money;
 
 /**
  * Processes payments for booked tickets.
@@ -33,17 +32,17 @@ public class PaymentService {
             System.out.println("[Payment] Invalid payment request.");
             return false;
         }
-        BigDecimal amount = Money.scale(ticket.getFare());
+        BigDecimal amount = scaleMoney(ticket.getFare());
         System.out.println("\n--- Payment via " + payment.getPaymentMethod() + " ---");
         System.out.println("Ticket ID : " + ticket.getTicketId());
-        System.out.println("Amount    : RM " + Money.format(amount));
+        System.out.println("Amount    : RM " + formatMoney(amount));
 
         // 1. Cash is paid from the e-wallet, so check the balance first.
         //    Card payments are charged to the card and do not need a balance.
         if (payment.deductsWalletBalance()
                 && passenger.getBalance().compareTo(amount) < 0) {
             System.out.println("[Payment] FAILED: Insufficient balance. "
-                    + "Current balance: RM " + Money.format(passenger.getBalance()));
+                    + "Current balance: RM " + formatMoney(passenger.getBalance()));
             return false;
         }
 
@@ -58,11 +57,31 @@ public class PaymentService {
             passenger.deduct(amount);
         }
 
-        System.out.println("[Payment] SUCCESS: RM " + Money.format(amount)
+        System.out.println("[Payment] SUCCESS: RM " + formatMoney(amount)
                 + " paid via " + payment.getPaymentMethod() + ".");
         if (payment.deductsWalletBalance()) {
-            System.out.println("New balance: RM " + Money.format(passenger.getBalance()));
+            System.out.println("New balance: RM " + formatMoney(passenger.getBalance()));
         }
         return true;
+    }
+
+    /**
+     * Rounds a money value to 2 decimal places (half-up).
+     *
+     * @param value the raw money value
+     * @return the scaled value
+     */
+    private static BigDecimal scaleMoney(BigDecimal value) {
+        return value.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Formats a money value as a plain string with 2 decimal places.
+     *
+     * @param value the money value
+     * @return e.g. "12.50"
+     */
+    private static String formatMoney(BigDecimal value) {
+        return value == null ? "0.00" : value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
     }
 }

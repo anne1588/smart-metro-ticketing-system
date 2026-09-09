@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 
 import enums.UserRole;
-import util.Money;
 
 /**
  * Represents a passenger of the metro system.
@@ -14,6 +13,8 @@ import util.Money;
  * cancel tickets and view a history of all owned tickets.</p>
  */
 public class Passenger extends User {
+
+    private static final int MONEY_SCALE = 2;
 
     private BigDecimal balance;
     private final List<Ticket> tickets;
@@ -41,7 +42,7 @@ public class Passenger extends User {
      */
     public Passenger(String email, String name, String password, BigDecimal initialBalance) {
         super(email, name, password, UserRole.PASSENGER);
-        this.balance = Money.scale(initialBalance == null ? BigDecimal.ZERO : initialBalance);
+        this.balance = scaleMoney(initialBalance == null ? BigDecimal.ZERO : initialBalance);
         this.tickets = new ArrayList<>();
     }
 
@@ -56,7 +57,7 @@ public class Passenger extends User {
      * @param balance the balance to set (used by the file loader)
      */
     public void setBalance(BigDecimal balance) {
-        this.balance = Money.scale(balance);
+        this.balance = scaleMoney(balance);
     }
 
     /**
@@ -69,7 +70,7 @@ public class Passenger extends User {
         if (amount == null || amount.signum() <= 0) {
             throw new IllegalArgumentException("Top-up amount must be greater than 0.");
         }
-        this.balance = this.balance.add(Money.scale(amount));
+        this.balance = this.balance.add(scaleMoney(amount));
     }
 
     /**
@@ -82,7 +83,7 @@ public class Passenger extends User {
         if (amount == null || amount.signum() <= 0) {
             return false;
         }
-        BigDecimal scaled = Money.scale(amount);
+        BigDecimal scaled = scaleMoney(amount);
         if (this.balance.compareTo(scaled) < 0) {
             return false;
         }
@@ -116,6 +117,26 @@ public class Passenger extends User {
     }
 
     /**
+     * Rounds a money value to 2 decimal places.
+     *
+     * @param value the raw money value
+     * @return the value scaled to 2 decimal places (half-up)
+     */
+    private static BigDecimal scaleMoney(BigDecimal value) {
+        return value.setScale(MONEY_SCALE, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Formats a money value as a plain string with 2 decimal places.
+     *
+     * @param value the money value
+     * @return e.g. "12.50"
+     */
+    private static String formatMoney(BigDecimal value) {
+        return value == null ? "0.00" : scaleMoney(value).toPlainString();
+    }
+
+    /**
      * Returns a summary of the passenger's profile.
      *
      * @return formatted profile string
@@ -123,6 +144,6 @@ public class Passenger extends User {
     @Override
     public String toString() {
         return super.toString()
-                + " | Balance: RM " + Money.format(balance);
+                + " | Balance: RM " + formatMoney(balance);
     }
 }

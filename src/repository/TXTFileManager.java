@@ -21,7 +21,6 @@ import model.Station;
 import model.Ticket;
 import model.Train;
 import model.User;
-import util.Money;
 
 /**
  * TXT implementation of the {@link FileManager} interface.
@@ -105,7 +104,7 @@ public class TXTFileManager implements FileManager {
                 line += "|0.00|ADMIN";
             } else {
                 Passenger passenger = (Passenger) user;
-                line += "|" + Money.format(passenger.getBalance()) + "|PASSENGER";
+                line += "|" + formatMoney(passenger.getBalance()) + "|PASSENGER";
             }
             lines.add(line);
         }
@@ -276,7 +275,7 @@ public class TXTFileManager implements FileManager {
                     + ticket.getDestination().getStationId() + "|"
                     + ticket.getTicketType() + "|"
                     + ticket.getStatus() + "|"
-                    + Money.format(ticket.getFare()) + "|"
+                    + formatMoney(ticket.getFare()) + "|"
                     + ticket.getDateOfPurchase() + "|"
                     + ticket.getDateOfUsed() + "|"
                     + ticket.getExpiryDate());
@@ -379,7 +378,7 @@ public class TXTFileManager implements FileManager {
             throw new FileProcessingException(
                     "Negative amount '" + value.trim() + "' in " + file + ".");
         }
-        return Money.scale(money);
+        return scaleMoney(money);
     }
 
     /**
@@ -480,5 +479,25 @@ public class TXTFileManager implements FileManager {
             throw new FileProcessingException(
                     "Invalid ticket status '" + value.trim() + "' in " + file + ".");
         }
+    }
+
+    /**
+     * Rounds a money value to 2 decimal places (half-up).
+     *
+     * @param value the raw money value
+     * @return the scaled value
+     */
+    private BigDecimal scaleMoney(BigDecimal value) {
+        return value.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Formats a money value as a plain string with 2 decimal places.
+     *
+     * @param value the money value
+     * @return e.g. "12.50"
+     */
+    private String formatMoney(BigDecimal value) {
+        return value == null ? "0.00" : scaleMoney(value).toPlainString();
     }
 }

@@ -14,7 +14,6 @@ import enums.TicketStatus;
 import enums.TicketType;
 import exception.NoDataFoundException;
 import model.Ticket;
-import util.Money;
 
 public class ReportService {
 
@@ -109,7 +108,7 @@ public class ReportService {
             // and passes that expired unused (EXPIRED). Only CANCELLED
             // tickets are refunded and therefore excluded.
             if (ticket.getStatus() != TicketStatus.CANCELLED) {
-                totalRevenue = totalRevenue.add(Money.scale(ticket.getFare()));
+                totalRevenue = totalRevenue.add(scaleMoney(ticket.getFare()));
             }
         }
 
@@ -126,7 +125,7 @@ public class ReportService {
         System.out.printf("  %-10s : %d%n", "EXPIRED", expiredCount);
         System.out.printf("  %-10s : %d%n", "CANCELLED", cancelledCount);
 
-        System.out.println("\nTotal revenue (non-cancelled tickets) : RM " + Money.format(totalRevenue));
+        System.out.println("\nTotal revenue (non-cancelled tickets) : RM " + formatMoney(totalRevenue));
         System.out.println("Cancelled tickets (refunded)          : " + cancelledCount);
         System.out.println("==========================================");
     }
@@ -147,5 +146,25 @@ public class ReportService {
                 return null;
             }
         }
+    }
+
+    /**
+     * Rounds a money value to 2 decimal places (half-up).
+     *
+     * @param value the raw money value
+     * @return the scaled value
+     */
+    private static BigDecimal scaleMoney(BigDecimal value) {
+        return value.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Formats a money value as a plain string with 2 decimal places.
+     *
+     * @param value the money value
+     * @return e.g. "12.50"
+     */
+    private static String formatMoney(BigDecimal value) {
+        return value == null ? "0.00" : scaleMoney(value).toPlainString();
     }
 }

@@ -3,7 +3,6 @@ package fare;
 import java.math.BigDecimal;
 
 import enums.TicketType;
-import util.Money;
 
 /**
  * Standard implementation of {@link FareCalculator}.
@@ -40,12 +39,22 @@ public class StandardFareCalculator implements FareCalculator {
 
         switch (ticketType) {
             case DAILY:
-                return Money.scale(baseFare.multiply(DAILY_MULTIPLIER));
+                return scaleMoney(baseFare.multiply(DAILY_MULTIPLIER));
             case MONTHLY:
-                return Money.scale(baseFare.multiply(MONTHLY_MULTIPLIER));
+                return scaleMoney(baseFare.multiply(MONTHLY_MULTIPLIER));
             case SINGLE:
             default:
-                return Money.scale(baseFare);
+                return scaleMoney(baseFare);
         }
+    }
+
+    /**
+     * Rounds a money value to 2 decimal places (half-up).
+     *
+     * @param value the raw value
+     * @return the scaled value
+     */
+    private static BigDecimal scaleMoney(BigDecimal value) {
+        return value.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 }

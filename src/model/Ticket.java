@@ -6,7 +6,6 @@ import java.time.format.DateTimeFormatter;
 
 import enums.TicketStatus;
 import enums.TicketType;
-import util.Money;
 
 /**
  * Represents a metro ticket.
@@ -264,7 +263,7 @@ public class Ticket implements Comparable<Ticket> {
                 + " -> To: " + destination.getName()
                 + " | Type: " + ticketType
                 + " | Status: " + status
-                + " | Fare: RM " + Money.format(fare)
+                + " | Fare: RM " + fare.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
                 + " | Date of Purchase: " + dateOfPurchase
                 + " | Date of Used: " + dateOfUsed
                 + " | Expiry Date: " + expiryDate;

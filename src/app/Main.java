@@ -37,7 +37,6 @@ import service.StationService;
 import service.TicketService;
 import service.TrainService;
 import service.UserService;
-import util.Money;
 
 /**
  * Entry point of the Smart Metro Ticketing System.
@@ -294,6 +293,17 @@ public class Main {
     }
 
     /**
+     * Formats a money value as a plain string with 2 decimal places.
+     *
+     * @param value the money value
+     * @return e.g. "12.50"
+     */
+    private static String formatMoney(BigDecimal value) {
+        return value == null ? "0.00"
+                : value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+
+    /**
      * Reads a non-blank string from the console.
      *
      * @param prompt the prompt to show
@@ -488,7 +498,7 @@ public class Main {
      */
     private static void topUpBalance(Passenger passenger) {
     	System.out.println("\n============ TOP-UP BALANCE ===========");
-    	System.out.println("Current balance: RM " + Money.format(passenger.getBalance()));
+    	System.out.println("Current balance: RM " + formatMoney(passenger.getBalance()));
         Double amount = readTopUpAmount("Enter top-up amount : RM ");
         if (amount == null) {
             System.out.println("[Info] Top-up cancelled.");
@@ -499,9 +509,9 @@ public class Main {
         	try {
         		FILE_MANAGER.saveUsers(USERS);
                 System.out.println("[Success] Top-up complete. New balance: RM "
-                        + Money.format(passenger.getBalance()));
+                        + formatMoney(passenger.getBalance()));
         	}catch(FileProcessingException e) {
-				passenger.deduct(Money.of(amount));
+				passenger.deduct(BigDecimal.valueOf(amount));
 				System.out.println("[Error] Top-up failed while saving data: " + e.getMessage());
 			}    
         } else {
@@ -565,7 +575,7 @@ public class Main {
         System.out.println("Distance    : " + route.getDistance() + " km");
         System.out.println("Ticket type : " + type);
         System.out.println("Validity    : " + ticketValidity(type));
-        System.out.println("Fare        : RM " + Money.format(fare));
+        System.out.println("Fare        : RM " + formatMoney(fare));
 
         // The wallet balance is only required for Cash payments; this is
         // enforced later in PaymentService so card payments can always proceed.
@@ -726,7 +736,7 @@ public class Main {
         for (Ticket t : myActive) {
             System.out.println("  " + t.getTicketId() + " - "
                     + t.getSource().getName() + " -> " + t.getDestination().getName()
-                    + " | RM " + Money.format(t.getFare()));
+                    + " | RM " + formatMoney(t.getFare()));
         }
 
         System.out.print("Enter ticket ID to use: ");
@@ -770,7 +780,7 @@ public class Main {
         for (Ticket t : myActive) {
             System.out.println("  " + t.getTicketId() + " - "
                     + t.getSource().getName() + " -> " + t.getDestination().getName()
-                    + " | RM " + Money.format(t.getFare()));
+                    + " | RM " + formatMoney(t.getFare()));
         }
 
         System.out.print("Enter ticket ID to cancel: ");
@@ -781,9 +791,9 @@ public class Main {
             FILE_MANAGER.saveTickets(TICKETS);
             FILE_MANAGER.saveUsers(USERS);
             System.out.println("[Success] Ticket " + cancelled.getTicketId()
-                    + " cancelled. RM " + Money.format(cancelled.getFare())
+                    + " cancelled. RM " + formatMoney(cancelled.getFare())
                     + " refunded to your balance. New balance: RM "
-                    + Money.format(passenger.getBalance()));
+                    + formatMoney(passenger.getBalance()));
         } catch (TicketNotFoundException e) {
             System.out.println("[Error] " + e.getMessage());
         } catch (FileProcessingException e) {

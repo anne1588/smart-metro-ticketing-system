@@ -7,7 +7,6 @@ import enums.UserRole;
 import exception.InvalidLoginException;
 import model.Passenger;
 import model.User;
-import util.Money;
 
 /**
  * Provides all user-related operations: registration, login,
@@ -122,7 +121,7 @@ public class UserService {
         System.out.println("\n========== PASSENGER PROFILE ==========");
         System.out.println("Name      : " + passenger.getName());
         System.out.println("Email     : " + passenger.getEmail());
-        System.out.println("Balance   : RM " + Money.format(passenger.getBalance()));
+        System.out.println("Balance   : RM " + formatMoney(passenger.getBalance()));
         System.out.println("Role      : " + passenger.getRole());
         System.out.println("---------------------------------------");
         System.out.println("Ticket History:");
@@ -152,11 +151,22 @@ public class UserService {
             System.out.printf("%-3d %-30s %-25s %-10s", index++, user.getName(),
                     user.getEmail(), user.getRole());
             if (user.getRole() == UserRole.PASSENGER) {
-                System.out.println(" RM " + Money.format(((Passenger) user).getBalance()));
+                System.out.println(" RM " + formatMoney(((Passenger) user).getBalance()));
             } else {
                 System.out.println();
             }
         }
         System.out.println("======================================");
+    }
+
+    /**
+     * Formats a money value as a plain string with 2 decimal places.
+     *
+     * @param value the money value
+     * @return e.g. "12.50"
+     */
+    private static String formatMoney(BigDecimal value) {
+        return value == null ? "0.00"
+                : value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
     }
 }
