@@ -13,6 +13,7 @@ import enums.TicketStatus;
 import enums.TicketType;
 import exception.FileProcessingException;
 import exception.InvalidLoginException;
+import exception.NoDataFoundException;
 import exception.TicketNotFoundException;
 import fare.FareCalculator;
 import fare.StandardFareCalculator;
@@ -218,6 +219,22 @@ public class Main {
             return -1;
         }
     }
+    
+    private static int readPositiveInt(String prompt) {
+		while (true) {
+			System.out.print(prompt);
+			try {
+				int value = Integer.parseInt(SCANNER.nextLine().trim());
+				if (value <= 0) {
+					System.out.println("[Error] Value must be greater than 0.");
+					continue;
+				}
+				return value;
+			} catch (NumberFormatException e) {
+				System.out.println("[Error] Please enter a valid integer.");
+			}
+		}
+	}
 
     /**
      * Reads a positive double from the console with validation.
@@ -618,7 +635,6 @@ public class Main {
                     return null;
                 default:
                     System.out.println("[Error] Invalid choice. Try again.");
-                    //return null;
             }
         }
         
@@ -789,7 +805,7 @@ public class Main {
                     userService.viewAllUsers();
                     break;
                 case 9:
-                    reportService.generateReport();
+                	generateReportMenu();
                     break;
                 case 10:
                     System.out.println("\n[Info] Logged out. See you soon!");
@@ -807,7 +823,6 @@ public class Main {
     private static void addStationFlow(){
  	
     	System.out.println("\n------------ ADD STATION ------------");
-        //String stationId = readNonEmpty("Station ID   : ");
         String name = readNonEmpty("Station name : ");
         String location = readNonEmpty("Location     : ");
         
@@ -819,12 +834,6 @@ public class Main {
         }catch(FileProcessingException e) {
         	System.out.println("Station was not added!");
         }
-
-        /*if (stationService.addStation(stationId, name, location)) {
-            System.out.println("[Success] Station added: " + name);
-        } else {
-            System.out.println("[Error] Station ID already exists: " + stationId);
-        }*/
     }
 
     /**
@@ -851,7 +860,6 @@ public class Main {
     private static void addTrainFlow(){
     	
         System.out.println("\n------------ ADD TRAIN ------------");
-        //String trainId = readNonEmpty("Train ID    : ");
         String name = readNonEmpty("Train name  : ");
         int capacity;
         while (true) {
@@ -872,18 +880,10 @@ public class Main {
         
         try {
         	FILE_MANAGER.saveTrains(TRAINS);
-        	//FILE_MANAGER.saveTrains(trainService.getTrains());
         	System.out.println("Train added successfully!");
         }catch(FileProcessingException e) {
         	System.out.println("Train was not added!");
         }
-        
-
-        /*if (trainService.addTrain(trainId, name, capacity)) {
-            System.out.println("[Success] Train added: " + name);
-        } else {
-            System.out.println("[Error] Train ID already exists: " + trainId);
-        }*/
     }
 
     /**
@@ -930,5 +930,40 @@ public class Main {
         }
         
        
+    }
+    
+    public static void generateReportMenu() {
+		while (true) {
+			System.out.println("\n------------ GENERATE REPORT ------------");
+			System.out.println("1. Monthly Report");
+			System.out.println("2. Yearly Report");
+			System.out.println("0. Back to Admin Menu");
+			System.out.print("Choose an option: ");
+			int choice = readInt();
+			switch (choice) {
+				case 1:
+					int year = readPositiveInt("Enter year (e.g., 2026): ");
+					int month = readPositiveInt("Enter month (1-12): ");
+					try {
+						reportService.generateMonthlyReport(year, month);
+					} catch (NoDataFoundException e) {
+						System.out.println("[Error] " + e.getMessage());
+					}
+					break;
+				case 2:
+					year = readPositiveInt("Enter year (e.g., 2026): ");
+					try {
+						reportService.generateYearlyReport(year);
+					} catch (NoDataFoundException e) {
+						System.out.println("[Error] " + e.getMessage());
+					}
+					break;
+				case 0:
+					System.out.println("[Info] Returning to admin menu.");
+					return;
+				default:
+					System.out.println("[Error] Invalid option. Please choose 1 or 2.");
+			}
+		}	
     }
 }

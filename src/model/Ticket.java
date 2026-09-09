@@ -37,7 +37,7 @@ public class Ticket implements Comparable<Ticket> {
      * @param dateOfUsed the date when the ticket was used (if applicable)
      */
     public Ticket(String ticketId, Passenger passenger, Station source,
-                  Station destination, TicketType ticketType, double fare, String dateOfPurchase) {
+                  Station destination, TicketType ticketType, double fare) {
         this.ticketId = ticketId;
         this.passenger = passenger;
         this.source = source;
@@ -45,7 +45,7 @@ public class Ticket implements Comparable<Ticket> {
         this.ticketType = ticketType;
         this.status = TicketStatus.ACTIVE;   // default status
         this.fare = fare;
-        this.dateOfPurchase = dateOfPurchase; // set the date of purchase
+        this.dateOfPurchase = "-"; // set the date of purchase
         this.dateOfUsed = "-"; // initialize date of used as null
     }
 

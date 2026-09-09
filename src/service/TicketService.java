@@ -84,7 +84,7 @@ public class TicketService {
         double fare = fareCalculator.calculateFare(route.getDistance(), ticketType);
 
         Ticket ticket = new Ticket(ticketId, passenger,
-                route.getSource(), route.getDestination(), ticketType, fare, now.format(formatter));
+                route.getSource(), route.getDestination(), ticketType, fare);
         tickets.add(ticket);
         passenger.addTicket(ticket);
         return ticket;

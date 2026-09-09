@@ -227,7 +227,8 @@ public class TXTFileManager implements FileManager {
             String dateOfUsed = p[8].trim();
 
             Ticket ticket = new Ticket(p[0].trim(), (Passenger) user,
-                    source, destination, type, fare, dateOfPurchase);
+                    source, destination, type, fare);
+            ticket.setDateOfPurchase(dateOfPurchase);
             ticket.setDateOfUsed(dateOfUsed);
             ticket.setStatus(status);
             tickets.add(ticket);
