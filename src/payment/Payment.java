@@ -1,5 +1,7 @@
 package payment;
 
+import java.math.BigDecimal;
+
 /**
  * Interface that defines a common contract for every payment method.
  * <p>Both {@link CashPayment} and {@link CardPayment} implement this
@@ -11,10 +13,10 @@ public interface Payment {
     /**
      * Processes a payment for the given amount.
      *
-     * @param amount the amount to pay in RM
+     * @param amount the amount to pay in RM (exact decimal value)
      * @return true if the payment was successful, false otherwise
      */
-    boolean pay(double amount);
+    boolean pay(BigDecimal amount);
 
     /**
      * Indicates whether this payment method is settled from the passenger's

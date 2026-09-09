@@ -24,34 +24,50 @@ public class StationService {
     }
 
     /**
-     * Adds a new station. The station ID must be unique.
+     * Adds a new station with the next available generated ID.
      *
-     * @param stationId the station ID (e.g. ST01)
-     * @param name      the station name
-     * @param location  the station location
-     * @return true if added successfully, false if the ID already exists
+     * @param name     the station name
+     * @param location the station location
+     * @return the newly added station
      */
-    /*public boolean addStation(String stationId, String name, String location) {
-        // Validate unique ID (case-insensitive)
+    public Station addStation(String name, String location) {
+        Station station = new Station(generateNextStationId(), name.trim(), location.trim());
+        stations.add(station);
+        return station;
+    }
+
+    /**
+     * Generates the next station ID by scanning existing station IDs, so
+     * deleted records or non-sequential data never cause a duplicate ID.
+     *
+     * @return the next station ID (e.g. ST08)
+     */
+    public String generateNextStationId() {
+        int nextNumber = 0;
         for (Station station : stations) {
-            if (station.getStationId().equalsIgnoreCase(stationId.trim())) {
-                return false;
+            if (station.getStationId() != null) {
+                nextNumber = Math.max(nextNumber, extractNumber(station.getStationId()));
             }
         }
-        stations.add(new Station(stationId.trim(), name.trim(), location.trim()));
-        return true;
-    }*/
-    
-    public String addStation(int size, String name, String location) {
-    	String stationId = generateNextStationId(size);
-    	stations.add(new Station(stationId, name, location));
-    	return stationId;
+        return String.format("ST%02d", nextNumber + 1);
     }
-    
-    public String generateNextStationId(int size) {
-    	//int nextNumber = stations.size();
-    	int nextNumber = size + 1;
-    	return String.format("ST%02d", nextNumber);
+
+    /**
+     * Extracts the trailing number from an ID such as "ST07".
+     *
+     * @param id the ID
+     * @return the numeric part, or 0 if none is present
+     */
+    private int extractNumber(String id) {
+        String digits = id.replaceAll("\\D", "");
+        if (digits.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /**
@@ -88,11 +104,17 @@ public class StationService {
      * (case-insensitive).
      *
      * @param keyword the search keyword
-     * @return a list of matching stations
+     * @return a list of matching stations (empty if keyword is null)
      */
     public List<Station> searchByName(String keyword) {
         List<Station> results = new ArrayList<>();
+        if (keyword == null) {
+            return results;
+        }
         String key = keyword.trim().toLowerCase();
+        if (key.isEmpty()) {
+            return results;
+        }
         for (Station station : stations) {
             if (station.getName().toLowerCase().contains(key)) {
                 results.add(station);
@@ -105,9 +127,12 @@ public class StationService {
      * Finds a station by its exact ID.
      *
      * @param stationId the station ID
-     * @return the station, or null if not found
+     * @return the station, or null if not found or the ID is null
      */
     public Station findById(String stationId) {
+        if (stationId == null) {
+            return null;
+        }
         for (Station station : stations) {
             if (station.getStationId().equalsIgnoreCase(stationId.trim())) {
                 return station;

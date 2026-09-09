@@ -1,5 +1,6 @@
 package service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -80,7 +81,7 @@ public class TicketService {
     public Ticket buyTicket(Passenger passenger, Route route, TicketType ticketType) {
         ticketCounter++;
         String ticketId = String.format("TK%03d", ticketCounter);
-        double fare = fareCalculator.calculateFare(route.getDistance(), ticketType);
+        BigDecimal fare = fareCalculator.calculateFare(route.getDistance(), ticketType);
 
         Ticket ticket = new Ticket(ticketId, passenger,
                 route.getSource(), route.getDestination(), ticketType, fare);
@@ -132,8 +133,13 @@ public class TicketService {
     }
 
     /**
-     * Uses an ACTIVE ticket for the given passenger: the status changes to USED
-     * and the current date/time is recorded as the date of use.
+     * Uses an ACTIVE ticket for the given passenger and records the current
+     * date/time as the date of use.
+     * <ul>
+     *   <li>SINGLE tickets are consumed: status becomes USED.</li>
+     *   <li>DAILY and MONTHLY passes are unlimited, so they remain ACTIVE
+     *       until their expiry date passes (then they become EXPIRED).</li>
+     * </ul>
      *
      * @param passenger the logged-in passenger trying to use the ticket
      * @param ticketId  the ticket ID to use
@@ -166,9 +172,13 @@ public class TicketService {
             throw new TicketNotFoundException("Ticket " + ticketId
                     + " cannot be used because its status is " + ticket.getStatus() + ".");
         }
-        // Record the date/time the ticket is used, then mark it as USED.
+        // Record the date/time the ticket is used.
         ticket.setDateOfUsed(LocalDateTime.now().format(FORMATTER));
-        ticket.setStatus(TicketStatus.USED);
+        // Only a SINGLE trip ticket is consumed by one use; DAILY/MONTHLY
+        // passes stay ACTIVE and can be used repeatedly until they expire.
+        if (ticket.getTicketType() == TicketType.SINGLE) {
+            ticket.setStatus(TicketStatus.USED);
+        }
         return ticket;
     }
 
@@ -190,9 +200,12 @@ public class TicketService {
      * Finds a ticket by its ID.
      *
      * @param ticketId the ticket ID
-     * @return the ticket, or null if not found
+     * @return the ticket, or null if not found or the ID is null
      */
     public Ticket findTicketById(String ticketId) {
+        if (ticketId == null) {
+            return null;
+        }
         for (Ticket ticket : tickets) {
             if (ticket.getTicketId().equalsIgnoreCase(ticketId.trim())) {
                 return ticket;
@@ -218,6 +231,9 @@ public class TicketService {
      */
     public List<Ticket> getTicketsForPassenger(Passenger passenger) {
         List<Ticket> result = new ArrayList<>();
+        if (passenger == null) {
+            return result;
+        }
         for (Ticket ticket : tickets) {
             if (ticket.getPassenger().getEmail().equalsIgnoreCase(passenger.getEmail())) {
                 result.add(ticket);

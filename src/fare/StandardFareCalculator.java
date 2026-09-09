@@ -1,6 +1,9 @@
 package fare;
 
+import java.math.BigDecimal;
+
 import enums.TicketType;
+import util.Money;
 
 /**
  * Standard implementation of {@link FareCalculator}.
@@ -10,35 +13,39 @@ import enums.TicketType;
  *   <li>DAILY   : base fare * 2</li>
  *   <li>MONTHLY : base fare * 20</li>
  * </ul>
+ * <p>All arithmetic uses {@link BigDecimal} so no rounding errors occur.</p>
  */
 public class StandardFareCalculator implements FareCalculator {
 
-    private static final double BASE_RATE = 0.50;  // RM per km
-    private static final int DAILY_MULTIPLIER = 2;
-    private static final int MONTHLY_MULTIPLIER = 20;
+    private static final BigDecimal BASE_RATE = new BigDecimal("0.50"); // RM per km
+    private static final BigDecimal DAILY_MULTIPLIER = new BigDecimal("2");
+    private static final BigDecimal MONTHLY_MULTIPLIER = new BigDecimal("20");
 
     /**
      * Calculates the fare using the standard pricing rules.
      *
      * @param distance   the distance of the trip in kilometres
      * @param ticketType the ticket type
-     * @return the fare amount in RM
+     * @return the fare amount in RM rounded to 2 decimal places
      */
     @Override
-    public double calculateFare(double distance, TicketType ticketType) {
+    public BigDecimal calculateFare(double distance, TicketType ticketType) {
+        if (Double.isNaN(distance) || Double.isInfinite(distance)) {
+            distance = 0;
+        }
         if (distance < 0) {
             distance = 0;
         }
-        double baseFare = distance * BASE_RATE;
+        BigDecimal baseFare = BigDecimal.valueOf(distance).multiply(BASE_RATE);
 
         switch (ticketType) {
             case DAILY:
-                return baseFare * DAILY_MULTIPLIER;
+                return Money.scale(baseFare.multiply(DAILY_MULTIPLIER));
             case MONTHLY:
-                return baseFare * MONTHLY_MULTIPLIER;
+                return Money.scale(baseFare.multiply(MONTHLY_MULTIPLIER));
             case SINGLE:
             default:
-                return baseFare;
+                return Money.scale(baseFare);
         }
     }
 }

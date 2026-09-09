@@ -1,11 +1,13 @@
 package service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 
 import enums.UserRole;
 import exception.InvalidLoginException;
 import model.Passenger;
 import model.User;
+import util.Money;
 
 /**
  * Provides all user-related operations: registration, login,
@@ -36,11 +38,14 @@ public class UserService {
      * @return true if the registration succeeded, false if the email is taken
      */
     public boolean registerPassenger(String email, String name, String password, double balance) {
-        String key = email.trim().toLowerCase();
-        if (users.containsKey(key)) {
+        if (email == null || name == null || password == null) {
             return false;
         }
-        Passenger passenger = new Passenger(key, name.trim(), password, balance);
+        String key = email.trim().toLowerCase();
+        if (key.isEmpty() || users.containsKey(key)) {
+            return false;
+        }
+        Passenger passenger = new Passenger(key, name.trim(), password, BigDecimal.valueOf(balance));
         users.put(key, passenger);
         return true;
     }
@@ -54,6 +59,12 @@ public class UserService {
      * @throws InvalidLoginException if the credentials do not match any user
      */
     public User login(String email, String password) throws InvalidLoginException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new InvalidLoginException("Email must be provided.");
+        }
+        if (password == null) {
+            throw new InvalidLoginException("Password must be provided.");
+        }
         String key = email.trim().toLowerCase();
         User user = users.get(key);
         if (user == null) {
@@ -72,6 +83,9 @@ public class UserService {
      * @return true if the email is already registered
      */
     public boolean isEmailTaken(String email) {
+        if (email == null) {
+            return false;
+        }
         return users.containsKey(email.trim().toLowerCase());
     }
 
@@ -83,10 +97,10 @@ public class UserService {
      * @return true if the top-up succeeded
      */
     public boolean topUpBalance(Passenger passenger, double amount) {
-        if (amount <= 0) {
+        if (passenger == null || Double.isNaN(amount) || Double.isInfinite(amount) || amount <= 0) {
             return false;
         }
-        passenger.topUp(amount);
+        passenger.topUp(BigDecimal.valueOf(amount));
         return true;
     }
 
@@ -108,7 +122,7 @@ public class UserService {
         System.out.println("\n========== PASSENGER PROFILE ==========");
         System.out.println("Name      : " + passenger.getName());
         System.out.println("Email     : " + passenger.getEmail());
-        System.out.println("Balance   : RM " + String.format("%.2f", passenger.getBalance()));
+        System.out.println("Balance   : RM " + Money.format(passenger.getBalance()));
         System.out.println("Role      : " + passenger.getRole());
         System.out.println("---------------------------------------");
         System.out.println("Ticket History:");
@@ -138,7 +152,7 @@ public class UserService {
             System.out.printf("%-3d %-30s %-25s %-10s", index++, user.getName(),
                     user.getEmail(), user.getRole());
             if (user.getRole() == UserRole.PASSENGER) {
-                System.out.printf(" RM %.2f%n", ((Passenger) user).getBalance());
+                System.out.println(" RM " + Money.format(((Passenger) user).getBalance()));
             } else {
                 System.out.println();
             }

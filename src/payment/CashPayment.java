@@ -1,5 +1,7 @@
 package payment;
 
+import java.math.BigDecimal;
+
 /**
  * Represents a cash payment method.
  * <p>This class demonstrates polymorphism by implementing the
@@ -16,8 +18,8 @@ public class CashPayment implements Payment {
      * @return true (cash payment always accepted in simulation)
      */
     @Override
-    public boolean pay(double amount) {
-        return amount > 0;
+    public boolean pay(BigDecimal amount) {
+        return amount != null && amount.signum() > 0;
     }
 
     /**

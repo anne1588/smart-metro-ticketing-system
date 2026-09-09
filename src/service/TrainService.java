@@ -22,32 +22,50 @@ public class TrainService {
     }
 
     /**
-     * Adds a new train. The train ID must be unique.
+     * Adds a new train with the next available generated ID.
      *
-     * @param trainId  the train ID (e.g. TR01)
      * @param name     the train name
      * @param capacity the maximum passenger capacity
-     * @return true if added successfully, false if the ID already exists
+     * @return the newly added train
      */
-    /*public boolean addTrain(String trainId, String name, int capacity) {
+    public Train addTrain(String name, int capacity) {
+        Train train = new Train(generateNextTrainId(), name.trim(), capacity);
+        trains.add(train);
+        return train;
+    }
+
+    /**
+     * Generates the next train ID by scanning existing train IDs, so deleted
+     * records or non-sequential data never cause a duplicate ID.
+     *
+     * @return the next train ID (e.g. TR06)
+     */
+    private String generateNextTrainId() {
+        int nextNumber = 0;
         for (Train train : trains) {
-            if (train.getTrainId().equalsIgnoreCase(trainId.trim())) {
-                return false;
+            if (train.getTrainId() != null) {
+                nextNumber = Math.max(nextNumber, extractNumber(train.getTrainId()));
             }
         }
-        trains.add(new Train(trainId.trim(), name.trim(), capacity));
-        return true;
-    }*/
-    
-    public String addTrain(int size, String name, int capacity) {
-        String trainId = generateNextTrainId(size);
-        trains.add(new Train(trainId, name.trim(), capacity));
-        return trainId;
+        return String.format("TR%02d", nextNumber + 1);
     }
-    
-    private String generateNextTrainId(int size) {
-        int nextNumber = size + 1;
-        return String.format("TR%02d", nextNumber);
+
+    /**
+     * Extracts the trailing number from an ID such as "TR05".
+     *
+     * @param id the ID
+     * @return the numeric part, or 0 if none is present
+     */
+    private int extractNumber(String id) {
+        String digits = id.replaceAll("\\D", "");
+        if (digits.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /**

@@ -1,8 +1,11 @@
 package service;
 
+import java.math.BigDecimal;
+
 import model.Passenger;
 import model.Ticket;
 import payment.Payment;
+import util.Money;
 
 /**
  * Processes payments for booked tickets.
@@ -30,16 +33,17 @@ public class PaymentService {
             System.out.println("[Payment] Invalid payment request.");
             return false;
         }
-        double amount = ticket.getFare();
+        BigDecimal amount = Money.scale(ticket.getFare());
         System.out.println("\n--- Payment via " + payment.getPaymentMethod() + " ---");
         System.out.println("Ticket ID : " + ticket.getTicketId());
-        System.out.println("Amount    : RM " + String.format("%.2f", amount));
+        System.out.println("Amount    : RM " + Money.format(amount));
 
         // 1. Cash is paid from the e-wallet, so check the balance first.
         //    Card payments are charged to the card and do not need a balance.
-        if (payment.deductsWalletBalance() && passenger.getBalance() < amount) {
+        if (payment.deductsWalletBalance()
+                && passenger.getBalance().compareTo(amount) < 0) {
             System.out.println("[Payment] FAILED: Insufficient balance. "
-                    + "Current balance: RM " + String.format("%.2f", passenger.getBalance()));
+                    + "Current balance: RM " + Money.format(passenger.getBalance()));
             return false;
         }
 
@@ -54,10 +58,10 @@ public class PaymentService {
             passenger.deduct(amount);
         }
 
-        System.out.println("[Payment] SUCCESS: RM " + String.format("%.2f", amount)
+        System.out.println("[Payment] SUCCESS: RM " + Money.format(amount)
                 + " paid via " + payment.getPaymentMethod() + ".");
         if (payment.deductsWalletBalance()) {
-            System.out.println("New balance: RM " + String.format("%.2f", passenger.getBalance()));
+            System.out.println("New balance: RM " + Money.format(passenger.getBalance()));
         }
         return true;
     }

@@ -25,32 +25,55 @@ public class RouteService {
     }
 
     /**
-     * Creates a new route. The route ID must be unique.
+     * Creates a new route with the next available generated ID.
      *
-     * @param routeId     the route ID (e.g. R01)
      * @param source      the origin station
      * @param destination the destination station
      * @param distance    the distance in kilometres
-     * @return true if created successfully, false if the ID already exists
+     * @return the newly created route, or null if a station is missing
      */
-    public boolean createRoute(int size, Station source, Station destination, double distance) {
-    	
-    	String routeId = generateNextRouteId(size);
-    	for (Route route : routes) {
-            if (route.getRouteId().equalsIgnoreCase(routeId.trim())) {
-                return false;
+    public Route createRoute(Station source, Station destination, double distance) {
+        if (source == null || destination == null) {
+            return null;
+        }
+        String routeId = generateNextRouteId();
+        Route route = new Route(routeId, source, destination, distance);
+        routes.add(route);
+        return route;
+    }
+
+    /**
+     * Generates the next route ID by scanning existing route IDs, so deleted
+     * records or non-sequential data never cause a duplicate ID.
+     *
+     * @return the next route ID (e.g. R08)
+     */
+    public String generateNextRouteId() {
+        int nextNumber = 0;
+        for (Route route : routes) {
+            if (route.getRouteId() != null) {
+                nextNumber = Math.max(nextNumber, extractNumber(route.getRouteId()));
             }
         }
-        if (source == null || destination == null) {
-            return false;
-        }
-        routes.add(new Route(routeId.trim(), source, destination, distance));
-        return true;
+        return String.format("R%02d", nextNumber + 1);
     }
-    
-    public String generateNextRouteId(int size) {
-    	int nextNumber = size + 1;
-    	return String.format("R%02d", nextNumber);
+
+    /**
+     * Extracts the trailing number from an ID such as "R07".
+     *
+     * @param id the ID
+     * @return the numeric part, or 0 if none is present
+     */
+    private int extractNumber(String id) {
+        String digits = id.replaceAll("\\D", "");
+        if (digits.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /**
@@ -66,9 +89,12 @@ public class RouteService {
      * Finds a route by its ID.
      *
      * @param routeId the route ID
-     * @return the route, or null if not found
+     * @return the route, or null if not found or the ID is null
      */
     public Route findById(String routeId) {
+        if (routeId == null) {
+            return null;
+        }
         for (Route route : routes) {
             if (route.getRouteId().equalsIgnoreCase(routeId.trim())) {
                 return route;
@@ -82,12 +108,19 @@ public class RouteService {
      *
      * @param source      the origin station
      * @param destination the destination station
-     * @return the matching route, or null if none exists
+     * @return the matching route, or null if none exists or an argument is null
      */
     public Route findRoute(Station source, Station destination) {
+        if (source == null || destination == null) {
+            return null;
+        }
         for (Route route : routes) {
-            if (route.getSource().getStationId().equalsIgnoreCase(source.getStationId())
-                    && route.getDestination().getStationId().equalsIgnoreCase(destination.getStationId())) {
+            Station src = route.getSource();
+            Station dst = route.getDestination();
+            if (src != null && dst != null
+                    && src.getStationId() != null && dst.getStationId() != null
+                    && src.getStationId().equalsIgnoreCase(source.getStationId())
+                    && dst.getStationId().equalsIgnoreCase(destination.getStationId())) {
                 return route;
             }
         }

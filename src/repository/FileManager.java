@@ -19,9 +19,6 @@ import model.User;
  */
 public interface FileManager {
 
-    /** Base folder where the data files are stored. */
-    String DATA_DIR = "data";
-
     /**
      * Loads all users from the users file.
      *
@@ -72,11 +69,14 @@ public interface FileManager {
 
     /**
      * Loads all routes from the routes file.
+     * <p>The station list is needed so every route points to the same
+     * station objects that are kept in the main station list.</p>
      *
+     * @param stations the already-loaded stations
      * @return a list of routes
      * @throws FileProcessingException if the file cannot be read
      */
-    List<Route> loadRoutes() throws FileProcessingException;
+    List<Route> loadRoutes(List<Station> stations) throws FileProcessingException;
 
     /**
      * Saves all routes to the routes file.

@@ -1,10 +1,12 @@
 package model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import enums.TicketStatus;
 import enums.TicketType;
+import util.Money;
 
 /**
  * Represents a metro ticket.
@@ -29,7 +31,7 @@ public class Ticket implements Comparable<Ticket> {
     private Station destination;
     private TicketType ticketType;
     private TicketStatus status;
-    private double fare;
+    private BigDecimal fare;
     private String dateOfPurchase; // date the ticket was purchased
     private String dateOfUsed; // date the ticket was used (set by Use Ticket)
     private String expiryDate; // Date/time when the ticket stops being valid
@@ -46,7 +48,7 @@ public class Ticket implements Comparable<Ticket> {
      * @param fare        the calculated fare in RM
      */
     public Ticket(String ticketId, Passenger passenger, Station source,
-                  Station destination, TicketType ticketType, double fare) {
+                  Station destination, TicketType ticketType, BigDecimal fare) {
         this.ticketId = ticketId;
         this.passenger = passenger;
         this.source = source;
@@ -144,16 +146,16 @@ public class Ticket implements Comparable<Ticket> {
     }
 
     /**
-     * @return the fare in RM
+     * @return the fare in RM (exact decimal value)
      */
-    public double getFare() {
+    public BigDecimal getFare() {
         return fare;
     }
 
     /**
      * @param fare the fare to set
      */
-    public void setFare(double fare) {
+    public void setFare(BigDecimal fare) {
         this.fare = fare;
     }
     
@@ -246,7 +248,7 @@ public class Ticket implements Comparable<Ticket> {
      */
     @Override
     public int compareTo(Ticket other) {
-        return Double.compare(this.fare, other.fare);
+        return this.fare.compareTo(other.fare);
     }
 
     /**
@@ -262,7 +264,7 @@ public class Ticket implements Comparable<Ticket> {
                 + " -> To: " + destination.getName()
                 + " | Type: " + ticketType
                 + " | Status: " + status
-                + " | Fare: RM " + String.format("%.2f", fare)
+                + " | Fare: RM " + Money.format(fare)
                 + " | Date of Purchase: " + dateOfPurchase
                 + " | Date of Used: " + dateOfUsed
                 + " | Expiry Date: " + expiryDate;

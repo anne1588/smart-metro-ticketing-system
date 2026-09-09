@@ -1,5 +1,7 @@
 package fare;
 
+import java.math.BigDecimal;
+
 import enums.TicketType;
 
 /**
@@ -15,7 +17,7 @@ public interface FareCalculator {
      *
      * @param distance   the distance of the trip in kilometres
      * @param ticketType the type of ticket (SINGLE / DAILY / MONTHLY)
-     * @return the fare amount in RM
+     * @return the fare amount in RM as an exact decimal value
      */
-    double calculateFare(double distance, TicketType ticketType);
+    BigDecimal calculateFare(double distance, TicketType ticketType);
 }

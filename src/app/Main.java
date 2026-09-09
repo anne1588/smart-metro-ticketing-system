@@ -1,6 +1,7 @@
 package app;
 
 import java.io.Console;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ import service.StationService;
 import service.TicketService;
 import service.TrainService;
 import service.UserService;
+import util.Money;
 
 /**
  * Entry point of the Smart Metro Ticketing System.
@@ -82,8 +84,10 @@ public class Main {
         try {
             loadData();
         } catch (FileProcessingException e) {
-            System.out.println("[Startup] Warning: " + e.getMessage());
-            System.out.println("[Startup] Starting with empty data...");
+            System.out.println("[Startup] ERROR: could not load data: " + e.getMessage());
+            System.out.println("[Startup] Exiting without saving so existing data files are NOT overwritten.");
+            SCANNER.close();
+            return;
         }
 
         initServices();
@@ -142,7 +146,7 @@ public class Main {
         HashMap<String, User> loadedUsers = FILE_MANAGER.loadUsers();
         List<Station> loadedStations = FILE_MANAGER.loadStations();
         List<Train> loadedTrains = FILE_MANAGER.loadTrains();
-        List<Route> loadedRoutes = FILE_MANAGER.loadRoutes();
+        List<Route> loadedRoutes = FILE_MANAGER.loadRoutes(loadedStations);
         List<Ticket> loadedTickets = FILE_MANAGER.loadTickets(loadedUsers, loadedStations);
 
         USERS.putAll(loadedUsers);
@@ -249,8 +253,8 @@ public class Main {
             System.out.print(prompt);
             try {
                 double value = Double.parseDouble(SCANNER.nextLine().trim());
-                if (value <= 0) {
-                    System.out.println("[Error] Amount must be greater than 0.");
+                if (Double.isNaN(value) || Double.isInfinite(value) || value <= 0) {
+                    System.out.println("[Error] Amount must be a finite number greater than 0.");
                     continue;
                 }
                 return value;
@@ -271,6 +275,10 @@ public class Main {
             System.out.print(prompt);
             try {
                 double value = Double.parseDouble(SCANNER.nextLine().trim());
+                if (Double.isNaN(value) || Double.isInfinite(value)) {
+                    System.out.println("[Error] Amount must be a valid number.");
+                    continue;
+                }
                 if (value < 0) {
                     System.out.println("[Error] Amount must be greater than 0.");
                     continue;
@@ -382,6 +390,7 @@ public class Main {
         		FILE_MANAGER.saveUsers(USERS);
         		System.out.println("\n[Success] Registration complete. You can now log in.");
         	}catch(FileProcessingException e) {
+				USERS.remove(email);
 				System.out.println("\n[Error] Registration failed while saving data: " + e.getMessage());
 			}
         } else {
@@ -479,7 +488,7 @@ public class Main {
      */
     private static void topUpBalance(Passenger passenger) {
     	System.out.println("\n============ TOP-UP BALANCE ===========");
-    	System.out.println("Current balance: RM " + String.format("%.2f", passenger.getBalance()));
+    	System.out.println("Current balance: RM " + Money.format(passenger.getBalance()));
         Double amount = readTopUpAmount("Enter top-up amount : RM ");
         if (amount == null) {
             System.out.println("[Info] Top-up cancelled.");
@@ -490,8 +499,9 @@ public class Main {
         	try {
         		FILE_MANAGER.saveUsers(USERS);
                 System.out.println("[Success] Top-up complete. New balance: RM "
-                        + String.format("%.2f", passenger.getBalance()));
+                        + Money.format(passenger.getBalance()));
         	}catch(FileProcessingException e) {
+				passenger.deduct(Money.of(amount));
 				System.out.println("[Error] Top-up failed while saving data: " + e.getMessage());
 			}    
         } else {
@@ -548,22 +558,17 @@ public class Main {
             return;
         }
 
-        double fare = FARE_CALCULATOR.calculateFare(route.getDistance(), type);
+        BigDecimal fare = FARE_CALCULATOR.calculateFare(route.getDistance(), type);
         System.out.println("\n--- Ticket Summary ---");
         System.out.println("Source      : " + source.getName());
         System.out.println("Destination : " + destination.getName());
         System.out.println("Distance    : " + route.getDistance() + " km");
         System.out.println("Ticket type : " + type);
         System.out.println("Validity    : " + ticketValidity(type));
-        System.out.println("Fare        : RM " + String.format("%.2f", fare));
+        System.out.println("Fare        : RM " + Money.format(fare));
 
-        if (passenger.getBalance() < fare) {
-            System.out.println("[Error] Insufficient balance (RM "
-                    + String.format("%.2f", passenger.getBalance())
-                    + "). Please top up first.");
-            return;
-        }
-
+        // The wallet balance is only required for Cash payments; this is
+        // enforced later in PaymentService so card payments can always proceed.
         System.out.print("\nConfirm purchase? (Y/N): ");
         if (!SCANNER.nextLine().trim().equalsIgnoreCase("Y")) {
             System.out.println("[Info] Purchase cancelled.");
@@ -578,9 +583,12 @@ public class Main {
         if (processPaymentForTicket(passenger, ticket)) {
         	try {
         		FILE_MANAGER.saveTickets(TICKETS);
+        		FILE_MANAGER.saveUsers(USERS);
         		System.out.println("\n[Success] Ticket booked and paid successfully!");
                 System.out.println("  " + ticket);
-        	}catch(FileProcessingException e) {}
+        	} catch (FileProcessingException e) {
+                System.out.println("[Error] Ticket booked and paid but could not save data: " + e.getMessage());
+            }
             
         } else {
             // Payment failed: remove the ticket so nothing is kept unpaid.
@@ -718,20 +726,23 @@ public class Main {
         for (Ticket t : myActive) {
             System.out.println("  " + t.getTicketId() + " - "
                     + t.getSource().getName() + " -> " + t.getDestination().getName()
-                    + " | RM " + String.format("%.2f", t.getFare()));
+                    + " | RM " + Money.format(t.getFare()));
         }
 
         System.out.print("Enter ticket ID to use: ");
         String ticketId = SCANNER.nextLine().trim();
         try {
             Ticket used = ticketService.useTicket(passenger, ticketId);
+            FILE_MANAGER.saveTickets(TICKETS);
             System.out.println("[Success] Ticket " + used.getTicketId()
                     + " (" + used.getSource().getName() + " -> " + used.getDestination().getName()
                     + ") has been successfully used at " + used.getDateOfUsed() + ".");
-            FILE_MANAGER.saveTickets(TICKETS);
         } catch (TicketNotFoundException e) {
             System.out.println("[Error] " + e.getMessage());
-        } catch (FileProcessingException e) {}
+        } catch (FileProcessingException e) {
+            System.out.println("[Error] Ticket was used in memory but could not be saved: "
+                    + e.getMessage());
+        }
     }
 
     // ------------------------------------------------------------------
@@ -759,22 +770,26 @@ public class Main {
         for (Ticket t : myActive) {
             System.out.println("  " + t.getTicketId() + " - "
                     + t.getSource().getName() + " -> " + t.getDestination().getName()
-                    + " | RM " + String.format("%.2f", t.getFare()));
+                    + " | RM " + Money.format(t.getFare()));
         }
 
         System.out.print("Enter ticket ID to cancel: ");
         String ticketId = SCANNER.nextLine().trim();
         try {
             Ticket cancelled = ticketService.cancelTicket(passenger, ticketId);
-            System.out.println("[Success] Ticket " + cancelled.getTicketId()
-                    + " cancelled. RM " + String.format("%.2f", cancelled.getFare())
-                    + " refunded to your balance. New balance: RM "
-                    + String.format("%.2f", passenger.getBalance()));
+            // Persist the ticket status change AND the balance refund together.
             FILE_MANAGER.saveTickets(TICKETS);
+            FILE_MANAGER.saveUsers(USERS);
+            System.out.println("[Success] Ticket " + cancelled.getTicketId()
+                    + " cancelled. RM " + Money.format(cancelled.getFare())
+                    + " refunded to your balance. New balance: RM "
+                    + Money.format(passenger.getBalance()));
         } catch (TicketNotFoundException e) {
             System.out.println("[Error] " + e.getMessage());
+        } catch (FileProcessingException e) {
+            System.out.println("[Error] Ticket was cancelled in memory but the refund could not be saved: "
+                    + e.getMessage());
         }
-        catch(FileProcessingException e) {}
     }
     
     
@@ -848,13 +863,14 @@ public class Main {
         String name = readNonEmpty("Station name : ");
         String location = readNonEmpty("Location     : ");
         
-        stationService.addStation(STATIONS.size(), name, location);
+        Station station = stationService.addStation(name, location);
         
         try {
         	FILE_MANAGER.saveStations(STATIONS);
-        	System.out.println("Station added successfully!");
+        	System.out.println("[Success] Station " + station.getStationId() + " added successfully!");
         }catch(FileProcessingException e) {
-        	System.out.println("Station was not added!");
+        	STATIONS.remove(station);
+            System.out.println("[Error] Station was not added: " + e.getMessage());
         }
     }
 
@@ -898,13 +914,14 @@ public class Main {
             }
         }
         
-        trainService.addTrain(TRAINS.size(), name, capacity);
+        Train train = trainService.addTrain(name, capacity);
         
         try {
         	FILE_MANAGER.saveTrains(TRAINS);
-        	System.out.println("Train added successfully!");
+        	System.out.println("[Success] Train " + train.getTrainId() + " added successfully!");
         }catch(FileProcessingException e) {
-        	System.out.println("Train was not added!");
+        	TRAINS.remove(train);
+            System.out.println("[Error] Train was not added: " + e.getMessage());
         }
     }
 
@@ -937,15 +954,17 @@ public class Main {
 
         double distance = readPositiveDouble("Distance (km)  : ");
 
-        if (routeService.createRoute(size, source, destination, distance)) {
+        Route route = routeService.createRoute(source, destination, distance);
+        if (route != null) {
         	 try {
              	FILE_MANAGER.saveRoutes(ROUTES);
-             	 System.out.println("[Success] Route created: " + routeService.generateNextRouteId(size) + " ("
+             	 System.out.println("[Success] Route created: " + route.getRouteId() + " ("
                           + source.getName() + " -> " + destination.getName() + ", "
                           + distance + " km)");
              	 
              } catch(FileProcessingException e) {
-             	System.out.println("[Error] Could not create route. The route ID may already exist.");
+            ROUTES.remove(route);
+            System.out.println("[Error] Route was not created: " + e.getMessage());
              }
         } else {
             System.out.println("[Error] Could not create route. The route ID may already exist.");

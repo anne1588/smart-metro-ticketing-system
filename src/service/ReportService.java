@@ -1,5 +1,6 @@
 package service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -13,6 +14,7 @@ import enums.TicketStatus;
 import enums.TicketType;
 import exception.NoDataFoundException;
 import model.Ticket;
+import util.Money;
 
 public class ReportService {
 
@@ -31,6 +33,10 @@ public class ReportService {
      * @throws NoDataFoundException if no tickets exist for that month and year
      */
     public void generateMonthlyReport(int year, int month) throws NoDataFoundException {
+        if (month < 1 || month > 12) {
+            throw new NoDataFoundException(
+                    "Invalid month: " + month + ". Month must be between 1 and 12.");
+        }
         List<Ticket> filtered = new ArrayList<>();
         for (Ticket ticket : tickets) {
             LocalDate date = parseDate(ticket.getDateOfPurchase());
@@ -80,8 +86,11 @@ public class ReportService {
         int singleCount = 0;
         int dailyCount = 0;
         int monthlyCount = 0;
+        int activeCount = 0;
+        int usedCount = 0;
+        int expiredCount = 0;
         int cancelledCount = 0;
-        double totalRevenue = 0.0;
+        BigDecimal totalRevenue = BigDecimal.ZERO;
 
         for (Ticket ticket : ticketList) {
             switch (ticket.getTicketType()) {
@@ -89,10 +98,18 @@ public class ReportService {
                 case DAILY -> dailyCount++;
                 case MONTHLY -> monthlyCount++;
             }
-            if (ticket.getStatus() == TicketStatus.CANCELLED) {
-                cancelledCount++;
-            } else if (ticket.getStatus() == TicketStatus.USED) {
-                totalRevenue += ticket.getFare();
+            switch (ticket.getStatus()) {
+                case ACTIVE -> activeCount++;
+                case USED -> usedCount++;
+                case EXPIRED -> expiredCount++;
+                case CANCELLED -> cancelledCount++;
+            }
+            // Revenue is earned for every ticket that was paid for and not
+            // refunded: consumed singles (USED), valid/used passes (ACTIVE),
+            // and passes that expired unused (EXPIRED). Only CANCELLED
+            // tickets are refunded and therefore excluded.
+            if (ticket.getStatus() != TicketStatus.CANCELLED) {
+                totalRevenue = totalRevenue.add(Money.scale(ticket.getFare()));
             }
         }
 
@@ -103,8 +120,14 @@ public class ReportService {
         System.out.printf("  %-10s : %d%n", TicketType.DAILY, dailyCount);
         System.out.printf("  %-10s : %d%n", TicketType.MONTHLY, monthlyCount);
 
-        System.out.println("\nTotal revenue (USED)    : RM " + String.format("%.2f", totalRevenue));
-        System.out.println("Cancelled tickets       : " + cancelledCount);
+        System.out.println("\nTicket status breakdown:");
+        System.out.printf("  %-10s : %d%n", "ACTIVE", activeCount);
+        System.out.printf("  %-10s : %d%n", "USED (consumed single trips)", usedCount);
+        System.out.printf("  %-10s : %d%n", "EXPIRED", expiredCount);
+        System.out.printf("  %-10s : %d%n", "CANCELLED", cancelledCount);
+
+        System.out.println("\nTotal revenue (non-cancelled tickets) : RM " + Money.format(totalRevenue));
+        System.out.println("Cancelled tickets (refunded)          : " + cancelledCount);
         System.out.println("==========================================");
     }
 

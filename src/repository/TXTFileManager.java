@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,7 @@ import model.Station;
 import model.Ticket;
 import model.Train;
 import model.User;
+import util.Money;
 
 /**
  * TXT implementation of the {@link FileManager} interface.
@@ -28,15 +30,41 @@ import model.User;
  * names and locations may contain spaces. Every method wraps any
  * {@link IOException} into a {@link FileProcessingException}.
  * </p>
- * <p>Files are stored inside the {@code data} folder of the project.</p>
+ * <p>Files are stored inside the {@code data} folder of the project. The
+ * folder is located automatically so that the application works regardless
+ * of the working directory.</p>
  */
 public class TXTFileManager implements FileManager {
+
+    private static final String DATA_DIR = resolveDataDir();
 
     private static final String USERS_FILE    = DATA_DIR + File.separator + "users.txt";
     private static final String STATIONS_FILE = DATA_DIR + File.separator + "stations.txt";
     private static final String TRAINS_FILE   = DATA_DIR + File.separator + "trains.txt";
     private static final String ROUTES_FILE   = DATA_DIR + File.separator + "routes.txt";
     private static final String TICKETS_FILE  = DATA_DIR + File.separator + "tickets.txt";
+
+    /**
+     * Locates the {@code data} folder of the project by walking up from the
+     * current working directory until a folder that contains the data files
+     * is found. This prevents running the app from another directory from
+     * loading an empty dataset or overwriting the wrong files.
+     *
+     * @return an absolute path to the data folder, or the relative
+     *         {@code data} folder if none can be located yet
+     */
+    private static String resolveDataDir() {
+        String fallback = "data";
+        File current = new File(System.getProperty("user.dir", "."));
+        for (File dir = current; dir != null; dir = dir.getParentFile()) {
+            File candidate = new File(dir, "data");
+            if (new File(candidate, "users.txt").exists()
+                    && new File(candidate, "stations.txt").exists()) {
+                return candidate.getAbsolutePath();
+            }
+        }
+        return fallback;
+    }
 
     // ------------------------------------------------------------------
     // 1. USERS
@@ -46,28 +74,21 @@ public class TXTFileManager implements FileManager {
     public HashMap<String, User> loadUsers() throws FileProcessingException {
         HashMap<String, User> users = new HashMap<>();
         for (String line : readAllLines(USERS_FILE)) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
             String[] p = line.split("\\|", -1);
-            if (p.length < 5) {
-                continue; // skip malformed lines
+            if (p.length != 5) {
+                throw new FileProcessingException("Malformed line in " + USERS_FILE + ": " + line);
             }
-            UserRole role;
-            try {
-                role = UserRole.valueOf(p[4].trim());
-            } catch (IllegalArgumentException e) {
-                continue; // unknown role -> skip
-            }
+            UserRole role = parseUserRole(p[4], USERS_FILE);
             if (role == UserRole.ADMIN) {
                 Admin admin = new Admin(p[0].trim(), p[1].trim(), p[2].trim());
                 users.put(admin.getEmail(), admin);
             } else {
+                BigDecimal balance = parseMoney(p[3], USERS_FILE);
                 Passenger passenger = new Passenger(
                         p[0].trim(),            // email
                         p[1].trim(),            // name
                         p[2].trim(),            // password
-                        parseDoubleSafe(p[3])); // balance
+                        balance);
                 users.put(passenger.getEmail(), passenger);
             }
         }
@@ -84,7 +105,7 @@ public class TXTFileManager implements FileManager {
                 line += "|0.00|ADMIN";
             } else {
                 Passenger passenger = (Passenger) user;
-                line += "|" + String.format("%.2f", passenger.getBalance()) + "|PASSENGER";
+                line += "|" + Money.format(passenger.getBalance()) + "|PASSENGER";
             }
             lines.add(line);
         }
@@ -99,12 +120,9 @@ public class TXTFileManager implements FileManager {
     public List<Station> loadStations() throws FileProcessingException {
         List<Station> stations = new ArrayList<>();
         for (String line : readAllLines(STATIONS_FILE)) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
             String[] p = line.split("\\|", -1);
-            if (p.length < 3) {
-                continue;
+            if (p.length != 3) {
+                throw new FileProcessingException("Malformed line in " + STATIONS_FILE + ": " + line);
             }
             stations.add(new Station(p[0].trim(), p[1].trim(), p[2].trim()));
         }
@@ -129,14 +147,12 @@ public class TXTFileManager implements FileManager {
     public List<Train> loadTrains() throws FileProcessingException {
         List<Train> trains = new ArrayList<>();
         for (String line : readAllLines(TRAINS_FILE)) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
             String[] p = line.split("\\|", -1);
-            if (p.length < 3) {
-                continue;
+            if (p.length != 3) {
+                throw new FileProcessingException("Malformed line in " + TRAINS_FILE + ": " + line);
             }
-            trains.add(new Train(p[0].trim(), p[1].trim(), (int) parseDoubleSafe(p[2])));
+            int capacity = parsePositiveInteger(p[2], TRAINS_FILE);
+            trains.add(new Train(p[0].trim(), p[1].trim(), capacity));
         }
         return trains;
     }
@@ -156,25 +172,28 @@ public class TXTFileManager implements FileManager {
     // ------------------------------------------------------------------
 
     @Override
-    public List<Route> loadRoutes() throws FileProcessingException {
+    public List<Route> loadRoutes(List<Station> stations) throws FileProcessingException {
         List<Route> routes = new ArrayList<>();
         for (String line : readAllLines(ROUTES_FILE)) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
             String[] p = line.split("\\|", -1);
-            if (p.length < 4) {
-                continue;
+            if (p.length != 4) {
+                throw new FileProcessingException("Malformed line in " + ROUTES_FILE + ": " + line);
             }
-            // Source/destination stored as station ID|station name|station location
             String[] src = p[1].split(",", -1);
             String[] dst = p[2].split(",", -1);
-            if (src.length < 3 || dst.length < 3) {
-                continue;
+            if (src.length < 1 || dst.length < 1) {
+                throw new FileProcessingException("Malformed line in " + ROUTES_FILE + ": " + line);
             }
-            Station source = new Station(src[0].trim(), src[1].trim(), src[2].trim());
-            Station destination = new Station(dst[0].trim(), dst[1].trim(), dst[2].trim());
-            routes.add(new Route(p[0].trim(), source, destination, parseDoubleSafe(p[3])));
+            // Reuse the station objects from the main station list so that any
+            // later change to a station is reflected consistently in routes.
+            Station source = findStationById(stations, src[0].trim());
+            Station destination = findStationById(stations, dst[0].trim());
+            if (source == null || destination == null) {
+                throw new FileProcessingException("Route " + p[0].trim()
+                        + " in " + ROUTES_FILE + " references an unknown station.");
+            }
+            double distance = parsePositiveDouble(p[3], ROUTES_FILE);
+            routes.add(new Route(p[0].trim(), source, destination, distance));
         }
         return routes;
     }
@@ -203,27 +222,26 @@ public class TXTFileManager implements FileManager {
             throws FileProcessingException {
         List<Ticket> tickets = new ArrayList<>();
         for (String line : readAllLines(TICKETS_FILE)) {
-            if (line.trim().isEmpty()) {
-                continue;
-            }
             String[] p = line.split("\\|", -1);
             // p = [ticketId, passengerEmail, srcId, dstId, type, status, fare,
             //      dateOfPurchase, dateOfUsed, expiryDate(optional)]
             if (p.length < 9) {
-                continue;
+                throw new FileProcessingException("Malformed line in " + TICKETS_FILE + ": " + line);
             }
             User user = users.get(p[1].trim());
             if (!(user instanceof Passenger)) {
-                continue; // ticket belongs to an unknown passenger -> skip
+                throw new FileProcessingException("Ticket " + p[0].trim()
+                        + " in " + TICKETS_FILE + " references an unknown passenger: " + p[1].trim());
             }
             Station source = findStationById(stations, p[2].trim());
             Station destination = findStationById(stations, p[3].trim());
             if (source == null || destination == null) {
-                continue; // cannot resolve stations -> skip
+                throw new FileProcessingException("Ticket " + p[0].trim()
+                        + " in " + TICKETS_FILE + " references an unknown station.");
             }
-            TicketType type = parseTicketType(p[4].trim());
-            TicketStatus status = parseTicketStatus(p[5].trim());
-            double fare = parseDoubleSafe(p[6]);
+            TicketType type = parseTicketType(p[4], TICKETS_FILE);
+            TicketStatus status = parseTicketStatus(p[5], TICKETS_FILE);
+            BigDecimal fare = parseMoney(p[6], TICKETS_FILE);
             String dateOfPurchase = p[7].trim();
             String dateOfUsed = p[8].trim();
 
@@ -258,7 +276,7 @@ public class TXTFileManager implements FileManager {
                     + ticket.getDestination().getStationId() + "|"
                     + ticket.getTicketType() + "|"
                     + ticket.getStatus() + "|"
-                    + String.format("%.2f", ticket.getFare()) + "|"
+                    + Money.format(ticket.getFare()) + "|"
                     + ticket.getDateOfPurchase() + "|"
                     + ticket.getDateOfUsed() + "|"
                     + ticket.getExpiryDate());
@@ -324,17 +342,90 @@ public class TXTFileManager implements FileManager {
     }
 
     /**
-     * Safely parses a double; invalid values fall back to 0.
+     * Parses a role value; unknown roles are treated as corrupt data.
      *
      * @param value the string to parse
-     * @return the parsed value, or 0.0 if unparseable
+     * @param file  the file being read (for the error message)
+     * @return the parsed role
+     * @throws FileProcessingException if the value is not a valid role
      */
-    private double parseDoubleSafe(String value) {
+    private UserRole parseUserRole(String value, String file) throws FileProcessingException {
         try {
-            return Double.parseDouble(value.trim());
-        } catch (NumberFormatException e) {
-            return 0.0;
+            return UserRole.valueOf(value.trim());
+        } catch (IllegalArgumentException e) {
+            throw new FileProcessingException(
+                    "Invalid role '" + value.trim() + "' in " + file + ".");
         }
+    }
+
+    /**
+     * Parses a monetary value (balance or fare). Invalid, non-finite or
+     * negative values are treated as corrupt data instead of defaults.
+     *
+     * @param value the string to parse
+     * @param file  the file being read (for the error message)
+     * @return the parsed amount (exact decimal, rounded to 2 dp)
+     * @throws FileProcessingException if the value is not a valid amount
+     */
+    private BigDecimal parseMoney(String value, String file) throws FileProcessingException {
+        BigDecimal money;
+        try {
+            money = new BigDecimal(value.trim());
+        } catch (NumberFormatException e) {
+            throw new FileProcessingException(
+                    "Invalid amount '" + value.trim() + "' in " + file + ".");
+        }
+        if (money.signum() < 0) {
+            throw new FileProcessingException(
+                    "Negative amount '" + value.trim() + "' in " + file + ".");
+        }
+        return Money.scale(money);
+    }
+
+    /**
+     * Parses a positive, finite double (used for route distances).
+     *
+     * @param value the string to parse
+     * @param file  the file being read (for the error message)
+     * @return the parsed value
+     * @throws FileProcessingException if the value is not a positive number
+     */
+    private double parsePositiveDouble(String value, String file) throws FileProcessingException {
+        double number;
+        try {
+            number = Double.parseDouble(value.trim());
+        } catch (NumberFormatException e) {
+            throw new FileProcessingException(
+                    "Invalid number '" + value.trim() + "' in " + file + ".");
+        }
+        if (Double.isNaN(number) || Double.isInfinite(number) || number <= 0) {
+            throw new FileProcessingException(
+                    "Invalid number '" + value.trim() + "' in " + file + ".");
+        }
+        return number;
+    }
+
+    /**
+     * Parses a positive integer (used for train capacity).
+     *
+     * @param value the string to parse
+     * @param file  the file being read (for the error message)
+     * @return the parsed value
+     * @throws FileProcessingException if the value is not a positive integer
+     */
+    private int parsePositiveInteger(String value, String file) throws FileProcessingException {
+        int number;
+        try {
+            number = Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new FileProcessingException(
+                    "Invalid number '" + value.trim() + "' in " + file + ".");
+        }
+        if (number <= 0) {
+            throw new FileProcessingException(
+                    "Invalid number '" + value.trim() + "' in " + file + ".");
+        }
+        return number;
     }
 
     /**
@@ -345,8 +436,12 @@ public class TXTFileManager implements FileManager {
      * @return the station, or null if not found
      */
     private Station findStationById(List<Station> stations, String id) {
+        if (id == null) {
+            return null;
+        }
         for (Station station : stations) {
-            if (station.getStationId().equalsIgnoreCase(id)) {
+            if (station.getStationId() != null
+                    && station.getStationId().equalsIgnoreCase(id)) {
                 return station;
             }
         }
@@ -354,30 +449,36 @@ public class TXTFileManager implements FileManager {
     }
 
     /**
-     * Safely parses a ticket type; invalid values fall back to SINGLE.
+     * Parses a ticket type; unknown types are treated as corrupt data.
      *
      * @param value the string to parse
+     * @param file  the file being read (for the error message)
      * @return the parsed ticket type
+     * @throws FileProcessingException if the value is not a valid type
      */
-    private TicketType parseTicketType(String value) {
+    private TicketType parseTicketType(String value, String file) throws FileProcessingException {
         try {
             return TicketType.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return TicketType.SINGLE;
+            throw new FileProcessingException(
+                    "Invalid ticket type '" + value.trim() + "' in " + file + ".");
         }
     }
 
     /**
-     * Safely parses a ticket status; invalid values fall back to ACTIVE.
+     * Parses a ticket status; unknown statuses are treated as corrupt data.
      *
      * @param value the string to parse
+     * @param file  the file being read (for the error message)
      * @return the parsed ticket status
+     * @throws FileProcessingException if the value is not a valid status
      */
-    private TicketStatus parseTicketStatus(String value) {
+    private TicketStatus parseTicketStatus(String value, String file) throws FileProcessingException {
         try {
             return TicketStatus.valueOf(value.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return TicketStatus.ACTIVE;
+            throw new FileProcessingException(
+                    "Invalid ticket status '" + value.trim() + "' in " + file + ".");
         }
     }
 }

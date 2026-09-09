@@ -1,9 +1,12 @@
 package model;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import enums.UserRole;
+import util.Money;
 
 /**
  * Represents a passenger of the metro system.
@@ -12,7 +15,7 @@ import enums.UserRole;
  */
 public class Passenger extends User {
 
-    private double balance;
+    private BigDecimal balance;
     private final List<Ticket> tickets;
 
 
@@ -25,48 +28,65 @@ public class Passenger extends User {
      * @param initialBalance starting e-wallet balance (RM)
      */
     public Passenger(String email, String name, String password, double initialBalance) {
+        this(email, name, password, BigDecimal.valueOf(initialBalance));
+    }
+
+    /**
+     * Creates a new passenger with an exact decimal starting balance.
+     *
+     * @param email        unique email address
+     * @param name         passenger name
+     * @param password     login password
+     * @param initialBalance starting e-wallet balance (RM)
+     */
+    public Passenger(String email, String name, String password, BigDecimal initialBalance) {
         super(email, name, password, UserRole.PASSENGER);
-        this.balance = initialBalance;
+        this.balance = Money.scale(initialBalance == null ? BigDecimal.ZERO : initialBalance);
         this.tickets = new ArrayList<>();
     }
 
     /**
      * @return the current e-wallet balance in RM
      */
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
     /**
      * @param balance the balance to set (used by the file loader)
      */
-    public void setBalance(double balance) {
-        this.balance = balance;
+    public void setBalance(BigDecimal balance) {
+        this.balance = Money.scale(balance);
     }
 
     /**
      * Adds money to the passenger's e-wallet.
      *
      * @param amount the amount to add (must be > 0)
+     * @throws IllegalArgumentException if the amount is not positive
      */
-    public void topUp(double amount) {
-        this.balance += amount;
+    public void topUp(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Top-up amount must be greater than 0.");
+        }
+        this.balance = this.balance.add(Money.scale(amount));
     }
 
     /**
      * Deducts money from the passenger's e-wallet.
      *
      * @param amount the amount to deduct (must be > 0)
-     * @return true if the deduction succeeded, false if insufficient balance
+     * @return true if the deduction succeeded, false if invalid or insufficient
      */
-    public boolean deduct(double amount) {
-        if (amount <= 0) {
+    public boolean deduct(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
             return false;
         }
-        if (this.balance < amount) {
+        BigDecimal scaled = Money.scale(amount);
+        if (this.balance.compareTo(scaled) < 0) {
             return false;
         }
-        this.balance -= amount;
+        this.balance = this.balance.subtract(scaled);
         return true;
     }
 
@@ -92,7 +112,7 @@ public class Passenger extends User {
      * @return an unmodifiable list of tickets owned by this passenger
      */
     public List<Ticket> getTickets() {
-        return tickets;
+        return Collections.unmodifiableList(tickets);
     }
 
     /**
@@ -103,6 +123,6 @@ public class Passenger extends User {
     @Override
     public String toString() {
         return super.toString()
-                + " | Balance: RM " + String.format("%.2f", balance);
+                + " | Balance: RM " + Money.format(balance);
     }
 }
