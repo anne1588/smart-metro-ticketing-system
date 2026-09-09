@@ -42,6 +42,15 @@ public class CardPayment implements Payment {
     }
 
     /**
+     * @return false because a card payment is charged to the card and does
+     *         not deduct the e-wallet balance
+     */
+    @Override
+    public boolean deductsWalletBalance() {
+        return false;
+    }
+
+    /**
      * @return "Card Payment" as the method description
      */
     @Override

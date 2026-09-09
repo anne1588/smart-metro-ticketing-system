@@ -16,8 +16,9 @@ public class PaymentService {
 
     /**
      * Processes the payment for a ticket using the given payment method.
-     * <p>On success, the passenger's e-wallet is charged the ticket fare
-     * and the ticket remains {@code ACTIVE} until it is explicitly used.</p>
+     * <p>Cash payments are settled from the passenger's e-wallet (the fare is
+     * deducted and sufficient balance is required). Card payments charge the
+     * card directly and leave the e-wallet balance untouched.</p>
      *
      * @param payment   the payment method (Cash or Card)
      * @param passenger the passenger paying for the ticket
@@ -34,8 +35,9 @@ public class PaymentService {
         System.out.println("Ticket ID : " + ticket.getTicketId());
         System.out.println("Amount    : RM " + String.format("%.2f", amount));
 
-        // 1. Check whether the passenger has enough balance.
-        if (passenger.getBalance() < amount) {
+        // 1. Cash is paid from the e-wallet, so check the balance first.
+        //    Card payments are charged to the card and do not need a balance.
+        if (payment.deductsWalletBalance() && passenger.getBalance() < amount) {
             System.out.println("[Payment] FAILED: Insufficient balance. "
                     + "Current balance: RM " + String.format("%.2f", passenger.getBalance()));
             return false;
@@ -47,12 +49,16 @@ public class PaymentService {
             return false;
         }
 
-        // 3. Deduct the amount from the passenger's e-wallet.
-        passenger.deduct(amount);
+        // 3. Deduct the amount from the passenger's e-wallet only for cash.
+        if (payment.deductsWalletBalance()) {
+            passenger.deduct(amount);
+        }
 
         System.out.println("[Payment] SUCCESS: RM " + String.format("%.2f", amount)
                 + " paid via " + payment.getPaymentMethod() + ".");
-        System.out.println("New balance: RM " + String.format("%.2f", passenger.getBalance()));
+        if (payment.deductsWalletBalance()) {
+            System.out.println("New balance: RM " + String.format("%.2f", passenger.getBalance()));
+        }
         return true;
     }
 }

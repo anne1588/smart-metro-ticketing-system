@@ -91,17 +91,28 @@ public class TicketService {
     }
 
     /**
-     * Cancels an ACTIVE ticket by ID. The fare is refunded to the passenger's
-     * balance and the ticket status changes to CANCELLED.
+     * Cancels an ACTIVE ticket by ID for the given passenger. The fare is
+     * refunded to the passenger's balance and the ticket status changes to
+     * CANCELLED.
      *
-     * @param ticketId the ticket ID to cancel
+     * @param passenger the logged-in passenger trying to cancel the ticket
+     * @param ticketId  the ticket ID to cancel
      * @return the cancelled ticket
-     * @throws TicketNotFoundException if the ticket ID does not exist
+     * @throws TicketNotFoundException if the ticket ID does not exist or the
+     *                                 ticket does not belong to this passenger
      */
-    public Ticket cancelTicket(String ticketId) throws TicketNotFoundException {
+    public Ticket cancelTicket(Passenger passenger, String ticketId) throws TicketNotFoundException {
+        if (passenger == null) {
+            throw new TicketNotFoundException("You must be logged in to cancel a ticket.");
+        }
         Ticket ticket = findTicketById(ticketId);
         if (ticket == null) {
             throw new TicketNotFoundException("Ticket not found with ID: " + ticketId);
+        }
+        // A passenger may only cancel a ticket that belongs to him/her.
+        if (!ticket.getPassenger().getEmail().equalsIgnoreCase(passenger.getEmail())) {
+            throw new TicketNotFoundException("Ticket " + ticketId
+                    + " does not belong to you. You can only cancel your own tickets.");
         }
         // A ticket whose validity period has passed can no longer be cancelled/refunded.
         if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
@@ -115,40 +126,11 @@ public class TicketService {
                     + " cannot be cancelled because its status is " + ticket.getStatus() + ".");
         }
         // Refund the fare to the passenger's balance.
-        Passenger owner = ticket.getPassenger();
-        owner.topUp(ticket.getFare());
+        passenger.topUp(ticket.getFare());
         ticket.setStatus(TicketStatus.CANCELLED);
         return ticket;
     }
     
-    /**
-     * Use an ACTIVE ticket by ID. The ticket status changes to USED.
-     *
-     * @param ticketId the ticket ID to use
-     * @return the use ticket
-     * @throws TicketNotFoundException if the ticket ID does not exist
-     */    
-    public Ticket useTicket(String ticketId) throws TicketNotFoundException{
-    	Ticket ticket = findTicketById(ticketId);
-		if (ticket == null) {
-			throw new TicketNotFoundException("Ticket not found with ID: " + ticketId);
-		}
-		// An expired ticket can no longer be used for travel.
-		if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
-			ticket.setStatus(TicketStatus.EXPIRED);
-			throw new TicketNotFoundException("Ticket " + ticketId
-					+ " has expired on " + ticket.getExpiryDate()
-					+ " and can no longer be used.");
-		}
-		if (ticket.getStatus() != TicketStatus.ACTIVE) {
-			throw new TicketNotFoundException("Ticket " + ticketId
-					+ " cannot be used because its status is " + ticket.getStatus() + ".");
-		}
-		//ticket.setDateOfUsed(dateOfUsed);
-		ticket.setStatus(TicketStatus.USED);
-		return ticket;
-    }
-
     /**
      * Marks every ACTIVE ticket whose expiry date has already passed as EXPIRED.
      * <p>Called on startup and whenever the ticket menus are shown, so that

@@ -17,6 +17,15 @@ public interface Payment {
     boolean pay(double amount);
 
     /**
+     * Indicates whether this payment method is settled from the passenger's
+     * e-wallet balance. Cash payments deduct the balance, while card
+     * payments charge the card directly and leave the balance untouched.
+     *
+     * @return true if the passenger's e-wallet balance must be deducted
+     */
+    boolean deductsWalletBalance();
+
+    /**
      * Returns a description of the payment method.
      *
      * @return payment method description (e.g. "Cash Payment")

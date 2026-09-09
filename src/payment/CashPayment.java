@@ -21,6 +21,14 @@ public class CashPayment implements Payment {
     }
 
     /**
+     * @return true because a cash purchase is paid from the e-wallet balance
+     */
+    @Override
+    public boolean deductsWalletBalance() {
+        return true;
+    }
+
+    /**
      * @return "Cash Payment" as the method description
      */
     @Override

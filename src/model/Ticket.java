@@ -30,7 +30,6 @@ public class Ticket implements Comparable<Ticket> {
     private TicketStatus status;
     private double fare;
     private String dateOfPurchase; // New field to store the date of purchase
-    private String dateOfUsed; // New field to store the date of used
     private String expiryDate; // Date/time when the ticket stops being valid
 
 
@@ -43,8 +42,6 @@ public class Ticket implements Comparable<Ticket> {
      * @param destination the destination station
      * @param ticketType  the ticket type (SINGLE / DAILY / MONTHLY)
      * @param fare        the calculated fare in RM
-     * @param dateOfPurchase the date when the ticket was purchased
-     * @param dateOfUsed the date when the ticket was used (if applicable)
      */
     public Ticket(String ticketId, Passenger passenger, Station source,
                   Station destination, TicketType ticketType, double fare) {
@@ -56,7 +53,6 @@ public class Ticket implements Comparable<Ticket> {
         this.status = TicketStatus.ACTIVE;   // default status
         this.fare = fare;
         this.dateOfPurchase = "-"; // set the date of purchase
-        this.dateOfUsed = "-"; // initialize date of used as null
         this.expiryDate = "-"; // set once the date of purchase is known
     }
 
@@ -166,13 +162,6 @@ public class Ticket implements Comparable<Ticket> {
     	this.dateOfPurchase = dateOfPurchase;
     }
     
-    public String getDateOfUsed() {
-    	return dateOfUsed;
-    }
-    
-    public void setDateOfUsed(String dateOfUsed) {
-		this.dateOfUsed = dateOfUsed;
-	}
 
     /**
      * @return the date/time when this ticket expires
@@ -264,7 +253,6 @@ public class Ticket implements Comparable<Ticket> {
                 + " | Status: " + status
                 + " | Fare: RM " + String.format("%.2f", fare)
                 + " | Date of Purchase: " + dateOfPurchase
-        		+ " | Date of Used: " + dateOfUsed
                 + " | Expiry Date: " + expiryDate;
     }
 }

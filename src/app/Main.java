@@ -433,10 +433,9 @@ public class Main {
             System.out.println("2. Top Up Balance");
             System.out.println("3. Search Station");
             System.out.println("4. Buy Ticket");
-            System.out.println("5. Use Ticket");
-            System.out.println("6. Cancel Ticket");
-            System.out.println("7. View My Tickets");
-            System.out.println("8. Logout");
+            System.out.println("5. Cancel Ticket");
+            System.out.println("6. View My Tickets");
+            System.out.println("7. Logout");
             System.out.print("Choose an option: ");
 
             switch (readInt()) {
@@ -453,21 +452,18 @@ public class Main {
                     buyTicketFlow(passenger);
                     break;
                 case 5:
-                    useTicketFlow(passenger);
-                    break;
-                case 6:
                     cancelTicketFlow(passenger);
                     break;
-                case 7:
+                case 6:
                     ticketService.displayTickets(
                             ticketService.getTicketsForPassenger(passenger), "MY TICKETS");
                     break;
-                case 8:
+                case 7:
                     System.out.println("\n[Info] Logged out. See you soon!");
                     inMenu = false;
                     break;
                 default:
-                    System.out.println("[Error] Invalid option. Please choose 1 - 8.");
+                    System.out.println("[Error] Invalid option. Please choose 1 - 7.");
             }
         }
     }
@@ -723,7 +719,7 @@ public class Main {
         System.out.print("Enter ticket ID to cancel: ");
         String ticketId = SCANNER.nextLine().trim();
         try {
-            Ticket cancelled = ticketService.cancelTicket(ticketId);
+            Ticket cancelled = ticketService.cancelTicket(passenger, ticketId);
             System.out.println("[Success] Ticket " + cancelled.getTicketId()
                     + " cancelled. RM " + String.format("%.2f", cancelled.getFare())
                     + " refunded to your balance. New balance: RM "
@@ -736,47 +732,6 @@ public class Main {
     }
     
     
-    // ------------------------------------------------------------------
-    // Use ticket flow
-    // ------------------------------------------------------------------
-    /**
-     * Uses an ACTIVE ticket belonging to the passenger and changes its status to USED.
-     *
-     * @param passenger the passenger
-     */
-    private static void useTicketFlow(Passenger passenger) {
-        System.out.println("\n------------ USE TICKET ------------");
-        List<Ticket> myActive = new ArrayList<>();
-        for (Ticket t : ticketService.getTicketsForPassenger(passenger)) {
-            if (t.getStatus() == TicketStatus.ACTIVE) {
-                myActive.add(t);
-            }
-        }
-        if (myActive.isEmpty()) {
-            System.out.println("[Info] You have no ACTIVE tickets to use.");
-            return;
-        }
-        System.out.println("Your ACTIVE tickets:");
-        for (Ticket t : myActive) {
-            System.out.println("  " + t.getTicketId() + " - "
-                    + t.getSource().getName() + " -> " + t.getDestination().getName()
-                    + " | RM " + String.format("%.2f", t.getFare()));
-        }
-
-        System.out.print("Enter ticket ID to use: ");
-        String ticketId = SCANNER.nextLine().trim();
-        try {
-            Ticket used = ticketService.useTicket(ticketId);
-            used.setDateOfUsed(getCurrentDateTime());
-            System.out.println("[Success] Ticket " + used.getTicketId()
-                    + " (" + used.getSource().getName() + " -> " + used.getDestination().getName()
-                    + ") has been successfully used.");
-            FILE_MANAGER.saveTickets(TICKETS);
-        } catch (TicketNotFoundException e) {
-            System.out.println("[Error] " + e.getMessage());
-        } catch (FileProcessingException e) {}
-    }
-
     // ------------------------------------------------------------------
     // Admin menu
     // ------------------------------------------------------------------
