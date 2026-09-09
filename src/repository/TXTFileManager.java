@@ -208,8 +208,8 @@ public class TXTFileManager implements FileManager {
             }
             String[] p = line.split("\\|", -1);
             // p = [ticketId, passengerEmail, srcId, dstId, type, status, fare,
-            //      dateOfPurchase, expiryDate(optional)]
-            if (p.length < 8) {
+            //      dateOfPurchase, dateOfUsed, expiryDate(optional)]
+            if (p.length < 9) {
                 continue;
             }
             User user = users.get(p[1].trim());
@@ -225,13 +225,15 @@ public class TXTFileManager implements FileManager {
             TicketStatus status = parseTicketStatus(p[5].trim());
             double fare = parseDoubleSafe(p[6]);
             String dateOfPurchase = p[7].trim();
+            String dateOfUsed = p[8].trim();
 
             Ticket ticket = new Ticket(p[0].trim(), (Passenger) user,
                     source, destination, type, fare);
             ticket.setDateOfPurchase(dateOfPurchase);
+            ticket.setDateOfUsed(dateOfUsed);
             ticket.setStatus(status);
-            if (p.length >= 9) {
-                ticket.setExpiryDate(p[8].trim());
+            if (p.length >= 10) {
+                ticket.setExpiryDate(p[9].trim());
             }
             // Backwards compatibility: if no expiry date is stored, compute it
             // from the date of purchase and the ticket type.
@@ -248,7 +250,7 @@ public class TXTFileManager implements FileManager {
     @Override
     public void saveTickets(List<Ticket> tickets) throws FileProcessingException {
         List<String> lines = new ArrayList<>();
-        lines.add("# Format: ticketId|passengerEmail|sourceId|destId|type|status|fare|dateOfPurchase|expiryDate");
+        lines.add("# Format: ticketId|passengerEmail|sourceId|destId|type|status|fare|dateOfPurchase|dateOfUsed|expiryDate");
         for (Ticket ticket : tickets) {
             lines.add(ticket.getTicketId() + "|"
                     + ticket.getPassenger().getEmail() + "|"
@@ -258,6 +260,7 @@ public class TXTFileManager implements FileManager {
                     + ticket.getStatus() + "|"
                     + String.format("%.2f", ticket.getFare()) + "|"
                     + ticket.getDateOfPurchase() + "|"
+                    + ticket.getDateOfUsed() + "|"
                     + ticket.getExpiryDate());
         }
         writeAllLines(TICKETS_FILE, lines);

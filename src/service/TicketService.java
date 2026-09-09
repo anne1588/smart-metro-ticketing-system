@@ -22,13 +22,12 @@ import model.Ticket;
  */
 public class TicketService {
 
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private final List<Ticket> tickets;
     private final FareCalculator fareCalculator;
     private int ticketCounter;
-    
-    LocalDateTime now = LocalDateTime.now();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-   // System.out.println("Formatted: " + now.format(formatter));
 
     /**
      * Creates a ticket service.
@@ -114,10 +113,10 @@ public class TicketService {
             throw new TicketNotFoundException("Ticket " + ticketId
                     + " does not belong to you. You can only cancel your own tickets.");
         }
-        // A ticket whose validity period has passed is marked USED and can no
-        // longer be cancelled/refunded.
+        // A ticket whose validity period has passed is marked EXPIRED and can
+        // no longer be cancelled/refunded.
         if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
-            ticket.setStatus(TicketStatus.USED);
+            ticket.setStatus(TicketStatus.EXPIRED);
             throw new TicketNotFoundException("Ticket " + ticketId
                     + " has expired on " + ticket.getExpiryDate()
                     + " and can no longer be cancelled.");
@@ -131,20 +130,58 @@ public class TicketService {
         ticket.setStatus(TicketStatus.CANCELLED);
         return ticket;
     }
-    
+
     /**
-     * Marks every ACTIVE ticket whose expiry date has already passed as USED.
-     * <p>When a ticket reaches its expiry date it is no longer valid, so its
-     * status is changed from ACTIVE to USED. (There is no separate EXPIRED
-     * status - USED covers both consumed and expired tickets.)</p>
+     * Uses an ACTIVE ticket for the given passenger: the status changes to USED
+     * and the current date/time is recorded as the date of use.
+     *
+     * @param passenger the logged-in passenger trying to use the ticket
+     * @param ticketId  the ticket ID to use
+     * @return the used ticket
+     * @throws TicketNotFoundException if the ticket ID does not exist or the
+     *                                 ticket does not belong to this passenger
+     */
+    public Ticket useTicket(Passenger passenger, String ticketId) throws TicketNotFoundException {
+        if (passenger == null) {
+            throw new TicketNotFoundException("You must be logged in to use a ticket.");
+        }
+        Ticket ticket = findTicketById(ticketId);
+        if (ticket == null) {
+            throw new TicketNotFoundException("Ticket not found with ID: " + ticketId);
+        }
+        // A passenger may only use a ticket that belongs to him/her.
+        if (!ticket.getPassenger().getEmail().equalsIgnoreCase(passenger.getEmail())) {
+            throw new TicketNotFoundException("Ticket " + ticketId
+                    + " does not belong to you. You can only use your own tickets.");
+        }
+        // A ticket whose validity period has passed becomes EXPIRED and can no
+        // longer be used for travel.
+        if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
+            ticket.setStatus(TicketStatus.EXPIRED);
+            throw new TicketNotFoundException("Ticket " + ticketId
+                    + " has expired on " + ticket.getExpiryDate()
+                    + " and can no longer be used.");
+        }
+        if (ticket.getStatus() != TicketStatus.ACTIVE) {
+            throw new TicketNotFoundException("Ticket " + ticketId
+                    + " cannot be used because its status is " + ticket.getStatus() + ".");
+        }
+        // Record the date/time the ticket is used, then mark it as USED.
+        ticket.setDateOfUsed(LocalDateTime.now().format(FORMATTER));
+        ticket.setStatus(TicketStatus.USED);
+        return ticket;
+    }
+
+    /**
+     * Marks every ACTIVE ticket whose expiry date has already passed as EXPIRED.
      * <p>Called on startup and whenever the ticket menus are shown, so that
      * tickets that are no longer valid are always displayed and handled as
-     * USED instead of ACTIVE.</p>
+     * EXPIRED instead of ACTIVE.</p>
      */
-    public void markExpiredTicketsAsUsed() {
+    public void markExpiredTickets() {
         for (Ticket ticket : tickets) {
             if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
-                ticket.setStatus(TicketStatus.USED);
+                ticket.setStatus(TicketStatus.EXPIRED);
             }
         }
     }

@@ -129,8 +129,8 @@ public class Main {
         ticketService = new TicketService(TICKETS, FARE_CALCULATOR);
         paymentService = new PaymentService();
         reportService = new ReportService(TICKETS);
-        // Mark tickets that expired while the system was not running as USED.
-        ticketService.markExpiredTicketsAsUsed();
+        // Mark tickets that expired while the system was not running as EXPIRED.
+        ticketService.markExpiredTickets();
     }
 
     /**
@@ -426,16 +426,17 @@ public class Main {
         boolean inMenu = true;
         while (inMenu) {
             // Refresh ticket statuses so expired tickets are handled correctly.
-            ticketService.markExpiredTicketsAsUsed();
+            ticketService.markExpiredTickets();
 
             System.out.println("\n------------ Passenger Menu ------------");
             System.out.println("1. View Profile");
             System.out.println("2. Top Up Balance");
             System.out.println("3. Search Station");
             System.out.println("4. Buy Ticket");
-            System.out.println("5. Cancel Ticket");
-            System.out.println("6. View My Tickets");
-            System.out.println("7. Logout");
+            System.out.println("5. Use Ticket");
+            System.out.println("6. Cancel Ticket");
+            System.out.println("7. View My Tickets");
+            System.out.println("8. Logout");
             System.out.print("Choose an option: ");
 
             switch (readInt()) {
@@ -452,18 +453,21 @@ public class Main {
                     buyTicketFlow(passenger);
                     break;
                 case 5:
-                    cancelTicketFlow(passenger);
+                    useTicketFlow(passenger);
                     break;
                 case 6:
+                    cancelTicketFlow(passenger);
+                    break;
+                case 7:
                     ticketService.displayTickets(
                             ticketService.getTicketsForPassenger(passenger), "MY TICKETS");
                     break;
-                case 7:
+                case 8:
                     System.out.println("\n[Info] Logged out. See you soon!");
                     inMenu = false;
                     break;
                 default:
-                    System.out.println("[Error] Invalid option. Please choose 1 - 7.");
+                    System.out.println("[Error] Invalid option. Please choose 1 - 8.");
             }
         }
     }
@@ -686,6 +690,48 @@ public class Main {
         }
 
         return paymentService.processPayment(payment, passenger, ticket);
+    }
+
+    // ------------------------------------------------------------------
+    // Use ticket flow
+    // ------------------------------------------------------------------
+
+    /**
+     * Marks an ACTIVE ticket belonging to the passenger as USED and records
+     * the date/time it was used.
+     *
+     * @param passenger the passenger
+     */
+    private static void useTicketFlow(Passenger passenger) {
+        System.out.println("\n------------ USE TICKET ------------");
+        List<Ticket> myActive = new ArrayList<>();
+        for (Ticket t : ticketService.getTicketsForPassenger(passenger)) {
+            if (t.getStatus() == TicketStatus.ACTIVE) {
+                myActive.add(t);
+            }
+        }
+        if (myActive.isEmpty()) {
+            System.out.println("[Info] You have no ACTIVE tickets to use.");
+            return;
+        }
+        System.out.println("Your ACTIVE tickets:");
+        for (Ticket t : myActive) {
+            System.out.println("  " + t.getTicketId() + " - "
+                    + t.getSource().getName() + " -> " + t.getDestination().getName()
+                    + " | RM " + String.format("%.2f", t.getFare()));
+        }
+
+        System.out.print("Enter ticket ID to use: ");
+        String ticketId = SCANNER.nextLine().trim();
+        try {
+            Ticket used = ticketService.useTicket(passenger, ticketId);
+            System.out.println("[Success] Ticket " + used.getTicketId()
+                    + " (" + used.getSource().getName() + " -> " + used.getDestination().getName()
+                    + ") has been successfully used at " + used.getDateOfUsed() + ".");
+            FILE_MANAGER.saveTickets(TICKETS);
+        } catch (TicketNotFoundException e) {
+            System.out.println("[Error] " + e.getMessage());
+        } catch (FileProcessingException e) {}
     }
 
     // ------------------------------------------------------------------

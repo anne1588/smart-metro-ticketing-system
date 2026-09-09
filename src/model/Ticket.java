@@ -10,7 +10,8 @@ import enums.TicketType;
  * Represents a metro ticket.
  * <p>Every ticket has a unique ticket ID, the passenger who bought it,
  * a source and destination station, a ticket type, a status
- * (default ACTIVE), the fare amount in RM and an expiry date.</p>
+ * (default ACTIVE), the fare amount in RM, the dates of purchase and use,
+ * and an expiry date.</p>
  * <p>The expiry date is derived from the date of purchase:
  * SINGLE and DAILY tickets expire 24 hours after purchase, while a
  * MONTHLY ticket expires 30 days after purchase.</p>
@@ -29,7 +30,8 @@ public class Ticket implements Comparable<Ticket> {
     private TicketType ticketType;
     private TicketStatus status;
     private double fare;
-    private String dateOfPurchase; // New field to store the date of purchase
+    private String dateOfPurchase; // date the ticket was purchased
+    private String dateOfUsed; // date the ticket was used (set by Use Ticket)
     private String expiryDate; // Date/time when the ticket stops being valid
 
 
@@ -53,6 +55,7 @@ public class Ticket implements Comparable<Ticket> {
         this.status = TicketStatus.ACTIVE;   // default status
         this.fare = fare;
         this.dateOfPurchase = "-"; // set the date of purchase
+        this.dateOfUsed = "-"; // set when the ticket is used (Use Ticket)
         this.expiryDate = "-"; // set once the date of purchase is known
     }
 
@@ -161,6 +164,14 @@ public class Ticket implements Comparable<Ticket> {
     public void setDateOfPurchase(String dateOfPurchase) {
     	this.dateOfPurchase = dateOfPurchase;
     }
+
+    public String getDateOfUsed() {
+        return dateOfUsed;
+    }
+
+    public void setDateOfUsed(String dateOfUsed) {
+        this.dateOfUsed = dateOfUsed;
+    }
     
 
     /**
@@ -253,6 +264,7 @@ public class Ticket implements Comparable<Ticket> {
                 + " | Status: " + status
                 + " | Fare: RM " + String.format("%.2f", fare)
                 + " | Date of Purchase: " + dateOfPurchase
+                + " | Date of Used: " + dateOfUsed
                 + " | Expiry Date: " + expiryDate;
     }
 }
