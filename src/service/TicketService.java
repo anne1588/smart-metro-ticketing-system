@@ -114,9 +114,10 @@ public class TicketService {
             throw new TicketNotFoundException("Ticket " + ticketId
                     + " does not belong to you. You can only cancel your own tickets.");
         }
-        // A ticket whose validity period has passed can no longer be cancelled/refunded.
+        // A ticket whose validity period has passed is marked USED and can no
+        // longer be cancelled/refunded.
         if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
-            ticket.setStatus(TicketStatus.EXPIRED);
+            ticket.setStatus(TicketStatus.USED);
             throw new TicketNotFoundException("Ticket " + ticketId
                     + " has expired on " + ticket.getExpiryDate()
                     + " and can no longer be cancelled.");
@@ -132,15 +133,18 @@ public class TicketService {
     }
     
     /**
-     * Marks every ACTIVE ticket whose expiry date has already passed as EXPIRED.
+     * Marks every ACTIVE ticket whose expiry date has already passed as USED.
+     * <p>When a ticket reaches its expiry date it is no longer valid, so its
+     * status is changed from ACTIVE to USED. (There is no separate EXPIRED
+     * status - USED covers both consumed and expired tickets.)</p>
      * <p>Called on startup and whenever the ticket menus are shown, so that
      * tickets that are no longer valid are always displayed and handled as
-     * EXPIRED instead of ACTIVE.</p>
+     * USED instead of ACTIVE.</p>
      */
-    public void markExpiredTickets() {
+    public void markExpiredTicketsAsUsed() {
         for (Ticket ticket : tickets) {
             if (ticket.getStatus() == TicketStatus.ACTIVE && ticket.isExpired()) {
-                ticket.setStatus(TicketStatus.EXPIRED);
+                ticket.setStatus(TicketStatus.USED);
             }
         }
     }

@@ -129,8 +129,8 @@ public class Main {
         ticketService = new TicketService(TICKETS, FARE_CALCULATOR);
         paymentService = new PaymentService();
         reportService = new ReportService(TICKETS);
-        // Mark tickets that expired while the system was not running.
-        ticketService.markExpiredTickets();
+        // Mark tickets that expired while the system was not running as USED.
+        ticketService.markExpiredTicketsAsUsed();
     }
 
     /**
@@ -426,7 +426,7 @@ public class Main {
         boolean inMenu = true;
         while (inMenu) {
             // Refresh ticket statuses so expired tickets are handled correctly.
-            ticketService.markExpiredTickets();
+            ticketService.markExpiredTicketsAsUsed();
 
             System.out.println("\n------------ Passenger Menu ------------");
             System.out.println("1. View Profile");
