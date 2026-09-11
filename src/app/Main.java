@@ -940,14 +940,12 @@ public class Main {
      */
     private static void createRouteFlow(){
     	
-    	int size = ROUTES.size();
         System.out.println("\n------------ CREATE ROUTE ------------");
         if (STATIONS.size() < 2) {
             System.out.println("[Error] At least 2 stations are needed to create a route.");
             return;
         }
 
-        //String routeId = readNonEmpty("Route ID       : ");
 
         Station source = chooseStation("Select SOURCE station:", "Enter station ID: ");
         if (source == null) {
@@ -960,6 +958,16 @@ public class Main {
         if (source.getStationId().equalsIgnoreCase(destination.getStationId())) {
             System.out.println("[Error] Source and destination must be different.");
             return;
+        }
+        
+        // Check if a route already exists between these two stations
+        for (Route existingRoute : ROUTES) {
+            if (existingRoute.getSource().getStationId().equalsIgnoreCase(source.getStationId()) &&
+                existingRoute.getDestination().getStationId().equalsIgnoreCase(destination.getStationId())) {
+                System.out.println("[Error] A route already exists between " + source.getName() 
+                    + " and " + destination.getName() + ".");
+                return;
+            }
         }
 
         double distance = readPositiveDouble("Distance (km)  : ");

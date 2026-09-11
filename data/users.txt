@@ -1,5 +1,5 @@
 # Format: email|name|password|balance|role
-anne@email.com|Anne|Anne1234|130.00|PASSENGER
+anne@email.com|Anne|Anne1234|110180.00|PASSENGER
 alice@email.com|Alice Tan|alice123|107.00|PASSENGER
 n@|n|n|193.45|PASSENGER
 hans@email.com|Hans|Hans1234|20.00|PASSENGER
